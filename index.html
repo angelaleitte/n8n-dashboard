@@ -221,7 +221,7 @@
     }
 
     /* Main */
-    .main { flex:1; padding:24px; max-width:1080px; margin:0 auto; width:100%; }
+    .main { flex:1; padding:24px 32px; width:100%; }
 
     /* Page header */
     .page-header { margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
@@ -229,7 +229,8 @@
     .page-header-left p { color:var(--text2); font-size:.82rem; margin-top:3px; }
 
     /* Stats */
-    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+    .stats-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; }
+    @media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr);}}
     @media(max-width:680px){.stats-grid{grid-template-columns:1fr 1fr;}}
     .stat-card {
       background:var(--card); border:1px solid var(--border2);
@@ -254,8 +255,8 @@
     .section-label::after { content:''; flex:1; height:1px; background:var(--border2); }
 
     /* Workflow grid */
-    .wf-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(400px,1fr)); gap:16px; }
-    @media(max-width:500px){.wf-grid{grid-template-columns:1fr;}}
+    .wf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(520px,1fr)); gap:20px; }
+    @media(max-width:600px){.wf-grid{grid-template-columns:1fr;}}
 
     .wf-card {
       background:var(--card); border:1px solid var(--border2);
@@ -495,6 +496,7 @@
 
     /* Responsive */
     @media(max-width:520px){ .main{padding:14px;} .topbar{padding:0 14px;} .wf-grid{grid-template-columns:1fr;} .prosp-fields{grid-template-columns:1fr;} }
+    @media(min-width:1400px){ .wf-grid{grid-template-columns:repeat(3,1fr);} }
   </style>
 </head>
 <body>
@@ -809,7 +811,7 @@
     </div>
 
     <!-- Google APIs -->
-    <div>
+    <div style="margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <p style="font-size:.82rem;font-weight:700">📅 Google APIs (Calendar · Sheets)</p>
         <a href="https://console.cloud.google.com/apis/dashboard" target="_blank" style="font-size:.72rem;color:var(--teal)">Google Console →</a>
@@ -830,9 +832,34 @@
           </div>
         </div>
         <div style="font-size:.72rem;color:var(--muted);padding:8px;background:rgba(16,232,154,.07);border-radius:6px;line-height:1.5">
-          ✅ <strong>Google Calendar e Google Sheets APIs são gratuitas</strong> nas cotas normais (milhares de chamadas/dia). Não há custo financeiro para uso típico.
+          ✅ <strong>Calendar e Sheets são gratuitas</strong> nas cotas normais. Sem custo financeiro para uso típico.
         </div>
       </div>
+    </div>
+
+    <!-- Google Cloud Billing (APIs pagas: Maps, Vision, etc.) -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <p style="font-size:.82rem;font-weight:700">💳 Google Cloud · APIs pagas</p>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:.7rem;padding:3px 8px" onclick="loadGcpBilling()">↻ Atualizar</button>
+          <a href="https://console.cloud.google.com/billing" target="_blank" style="font-size:.72rem;color:var(--teal)">Billing Console →</a>
+        </div>
+      </div>
+      <div id="gcp-billing-body" style="background:var(--bg2);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border2)">
+        <div style="color:var(--muted);font-size:.78rem;text-align:center;padding:10px 0">
+          Clique em ↻ para buscar uso de APIs do mês atual
+        </div>
+      </div>
+      <!-- Configuração do projeto GCP -->
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="gcp-project-id" class="form-input" style="flex:1;font-size:.76rem;padding:7px 10px" placeholder="ID do projeto GCP  (ex: my-project-123456)" />
+        <button class="btn btn-ghost" style="font-size:.74rem" onclick="saveGcpProject()">Salvar projeto</button>
+      </div>
+      <p style="font-size:.7rem;color:var(--muted);margin-top:6px;line-height:1.5">
+        ⓘ Usa a Conta Google conectada (Conta 1 ou 2) com escopo de billing/monitoring. Para ver custos detalhados configure também o
+        <a href="https://console.cloud.google.com/billing/export" target="_blank" style="color:var(--teal)">BigQuery Billing Export</a>.
+      </p>
     </div>
   </div>
 </div>
@@ -1713,7 +1740,13 @@ function makeGauth(slot) {
       if (!cid || !window.google?.accounts?.oauth2) return false;
       this._client = google.accounts.oauth2.initTokenClient({
         client_id: cid,
-        scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets',
+        scope: [
+          'https://www.googleapis.com/auth/calendar.readonly',
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/cloud-billing.readonly',
+          'https://www.googleapis.com/auth/monitoring.read',
+          'https://www.googleapis.com/auth/cloudplatformprojects.readonly',
+        ].join(' '),
         callback: (resp) => {
           if (resp.access_token) {
             this.token = resp.access_token;
@@ -1957,7 +1990,6 @@ function resetCost() {
 }
 
 function openApiUsage() {
-  // Atualiza valores no modal
   const cost   = parseFloat(ls.g('openai_cost') || '0');
   const tokens = parseInt(ls.g('openai_tokens') || '0');
   document.getElementById('au-panel-cost').textContent    = cost === 0 ? '$0.0000' : `$${cost.toFixed(6)}`;
@@ -1967,7 +1999,149 @@ function openApiUsage() {
   const g2el = document.getElementById('au-g2-status');
   if (g1el) { g1el.textContent = gauth.token  ? '✓ Conectada' : '– Offline'; g1el.style.color = gauth.token  ? 'var(--green)' : 'var(--muted)'; }
   if (g2el) { g2el.textContent = gauth2.token ? '✓ Conectada' : '– Offline'; g2el.style.color = gauth2.token ? 'var(--green)' : 'var(--muted)'; }
+  // Preenche ID do projeto salvo
+  const pid = ls.g('gcp_project_id') || '';
+  const pidEl = document.getElementById('gcp-project-id');
+  if (pidEl && pid) pidEl.value = pid;
   document.getElementById('api-usage-modal').classList.add('show');
+}
+
+function saveGcpProject() {
+  const v = document.getElementById('gcp-project-id')?.value.trim();
+  if (!v) return;
+  ls.s('gcp_project_id', v);
+  toast('✓ Projeto GCP salvo!', 'ok');
+}
+
+/* ── Google Cloud Billing / Monitoring ── */
+async function loadGcpBilling() {
+  const el = document.getElementById('gcp-billing-body');
+  if (!el) return;
+
+  const projectId = ls.g('gcp_project_id') || document.getElementById('gcp-project-id')?.value.trim();
+  if (!projectId) {
+    el.innerHTML = `<div style="color:var(--yellow);font-size:.78rem">⚠️ Informe o ID do projeto GCP no campo abaixo e clique "Salvar projeto"</div>`;
+    return;
+  }
+
+  // Usa a conta Google que tiver token (1 ou 2)
+  const gActive = gauth.token ? gauth : gauth2.token ? gauth2 : null;
+  if (!gActive) {
+    el.innerHTML = `<div style="color:var(--red);font-size:.78rem">⚠️ Conecte uma conta Google nas ⚙ Configurações para buscar dados de billing</div>`;
+    return;
+  }
+
+  el.innerHTML = '<div class="spin" style="margin:12px auto"></div>';
+
+  // 1. Busca métricas de uso via Cloud Monitoring API (request_count por serviço)
+  const now     = new Date();
+  const start   = new Date(now.getFullYear(), now.getMonth(), 1).toISOString(); // início do mês
+  const end     = now.toISOString();
+
+  const monUrl = `https://monitoring.googleapis.com/v3/projects/${projectId}/timeSeries`
+    + `?filter=metric.type%3D%22serviceruntime.googleapis.com%2Fapi%2Frequest_count%22`
+    + `&interval.startTime=${encodeURIComponent(start)}`
+    + `&interval.endTime=${encodeURIComponent(end)}`
+    + `&aggregation.alignmentPeriod=2592000s`   // 30 dias
+    + `&aggregation.perSeriesAligner=ALIGN_SUM`
+    + `&aggregation.groupByFields=resource.labels.service`
+    + `&aggregation.crossSeriesReducer=REDUCE_SUM`;
+
+  const monData = await gActive.call(monUrl);
+
+  // 2. Busca contas de billing para mostrar info geral
+  const billingData = await gActive.call(`https://cloudbilling.googleapis.com/v1/billingAccounts`);
+
+  // Monta HTML
+  let html = '';
+
+  // Info de billing accounts
+  if (billingData?.billingAccounts?.length) {
+    const ba = billingData.billingAccounts[0];
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:8px 12px;background:var(--card);border-radius:8px;border:1px solid var(--border2)">
+      <div>
+        <div style="font-size:.72rem;color:var(--muted)">Conta de cobrança</div>
+        <div style="font-size:.84rem;font-weight:700">${ba.displayName || ba.name}</div>
+      </div>
+      <span style="font-size:.72rem;padding:3px 8px;border-radius:99px;background:${ba.open ? 'rgba(16,232,154,.12)' : 'rgba(255,94,108,.12)'};color:${ba.open ? 'var(--green)' : 'var(--red)'}">
+        ${ba.open ? '● Ativa' : '● Suspensa'}
+      </span>
+    </div>`;
+  }
+
+  // Tabela de uso por serviço (Cloud Monitoring)
+  if (monData?.timeSeries?.length) {
+    const services = monData.timeSeries.map(ts => {
+      const service = ts.resource?.labels?.service || ts.metric?.labels?.service || 'unknown';
+      const total   = (ts.points || []).reduce((s, p) => s + (p.value?.int64Value || p.value?.doubleValue || 0), 0);
+      return { service, total: parseInt(total) };
+    }).filter(s => s.total > 0)
+      .sort((a, b) => b.total - a.total);
+
+    if (services.length) {
+      const apiCosts = {
+        'maps-backend.googleapis.com':       { name: 'Maps (backend)',       price: 0.005 },
+        'maps.googleapis.com':               { name: 'Maps',                 price: 0.005 },
+        'vision.googleapis.com':             { name: 'Cloud Vision',         price: 0.0015 },
+        'translation.googleapis.com':        { name: 'Cloud Translation',    price: 0.00002 },
+        'speech.googleapis.com':             { name: 'Speech-to-Text',       price: 0.006 },
+        'texttospeech.googleapis.com':        { name: 'Text-to-Speech',       price: 0.000004 },
+        'places.googleapis.com':             { name: 'Places API',           price: 0.017 },
+        'sheets.googleapis.com':             { name: 'Google Sheets',        price: 0 },
+        'calendar-json.googleapis.com':      { name: 'Google Calendar',      price: 0 },
+        'cloudfunctions.googleapis.com':     { name: 'Cloud Functions',      price: 0.0000004 },
+      };
+
+      html += `<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">
+        Uso este mês — ${new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}
+      </div>`;
+      html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">
+        <thead><tr style="border-bottom:1px solid var(--border2)">
+          <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:600">Serviço</th>
+          <th style="text-align:right;padding:6px 8px;color:var(--muted);font-weight:600">Requisições</th>
+          <th style="text-align:right;padding:6px 8px;color:var(--muted);font-weight:600">Custo estimado*</th>
+        </tr></thead><tbody>`;
+
+      let totalEst = 0;
+      services.forEach(s => {
+        const info = Object.entries(apiCosts).find(([k]) => s.service.includes(k.split('.')[0]))?.[1];
+        const name = info?.name || s.service.replace('.googleapis.com','').replace(/-/g,' ');
+        const est  = info ? (s.total * info.price) : null;
+        if (est !== null) totalEst += est;
+        html += `<tr style="border-bottom:1px solid var(--border2)">
+          <td style="padding:6px 8px">${name}</td>
+          <td style="padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums">${s.total.toLocaleString('pt-BR')}</td>
+          <td style="padding:6px 8px;text-align:right;color:${est > 0.5 ? 'var(--red)' : est > 0.1 ? 'var(--yellow)' : 'var(--green)'}">
+            ${est !== null ? (est < 0.001 ? '< $0.001' : `$${est.toFixed(3)}`) : '—'}
+          </td>
+        </tr>`;
+      });
+
+      html += `</tbody><tfoot><tr style="border-top:2px solid var(--border)">
+        <td colspan="2" style="padding:8px;font-weight:700">Total estimado</td>
+        <td style="padding:8px;text-align:right;font-weight:700;color:var(--teal)">≈ $${totalEst.toFixed(3)}</td>
+      </tr></tfoot></table></div>
+      <p style="font-size:.68rem;color:var(--muted);margin-top:8px">* Estimativa baseada em preços públicos do Google. Consulte o <a href="https://console.cloud.google.com/billing" target="_blank" style="color:var(--teal)">Billing Console</a> para valores reais.</p>`;
+    } else {
+      html += `<div style="color:var(--muted);font-size:.78rem;text-align:center;padding:10px">Nenhuma chamada registrada neste mês</div>`;
+    }
+  } else if (monData?.error) {
+    const code = monData.error.code;
+    if (code === 403) {
+      html += `<div style="color:var(--yellow);font-size:.78rem;padding:10px;background:rgba(255,209,102,.07);border-radius:8px;line-height:1.6">
+        ⚠️ <strong>Permissão negada.</strong> Para ver métricas, a conta Google precisa de acesso ao projeto GCP.<br>
+        <a href="https://console.cloud.google.com/iam-admin/iam?project=${projectId}" target="_blank" style="color:var(--teal)">Verificar permissões IAM →</a>
+      </div>`;
+    } else {
+      html += `<div style="color:var(--red);font-size:.78rem">Erro ${code}: ${monData.error.message}</div>`;
+    }
+  } else {
+    html += `<div style="color:var(--muted);font-size:.78rem;text-align:center;padding:10px">
+      Sem dados de monitoramento. Verifique se o projeto está correto e se a <a href="https://console.cloud.google.com/apis/library/monitoring.googleapis.com" target="_blank" style="color:var(--teal)">Cloud Monitoring API</a> está ativada.
+    </div>`;
+  }
+
+  el.innerHTML = html || `<div style="color:var(--muted);font-size:.78rem;text-align:center;padding:10px">Sem dados disponíveis</div>`;
 }
 
 init();
