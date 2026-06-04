@@ -582,6 +582,10 @@
           <button class="input-eye" onclick="eye('login-pwd',this)">👁</button>
         </div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.76rem;color:var(--text2);margin-bottom:14px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="remember-me" style="accent-color:var(--teal);width:15px;height:15px;cursor:pointer" checked />
+        Lembrar por 30 dias neste dispositivo
+      </label>
       <button class="btn btn-teal btn-full" id="login-btn" onclick="login()">Entrar →</button>
       <div class="divider"></div>
       <div style="text-align:center">
@@ -1069,16 +1073,26 @@ function toggleTheme() {
 (()=>{ const t = ls.g('theme') || 'dark'; applyTheme(t); })();
 
 /* ── Init ── */
+function isLoggedIn() {
+  // Sessão ativa nesta aba
+  if (sessionStorage.getItem('al_logged') === '1') return true;
+  // Lembrar por 30 dias
+  const until = parseInt(ls.g('al_remember_until') || '0');
+  if (until && Date.now() < until) { sessionStorage.setItem('al_logged','1'); return true; }
+  return false;
+}
+
 async function init() {
   const ok = ls.g('n8n_url') && ls.g('n8n_key') && ls.g('n8n_hash');
-  const logged = sessionStorage.getItem('al_logged') === '1';
-  if (!ok)     { show('setup-page'); return; }
-  if (!logged) { show('login-page'); return; }
+  if (!ok)           { show('setup-page'); return; }
+  if (!isLoggedIn()) { show('login-page'); return; }
+  enterDashboard();
+}
+
+function enterDashboard() {
   show('dashboard-page');
   updateCostDisplay();
-  // Inicializa Google (GIS carrega async — aguarda 1.5s)
   setTimeout(() => { gauth.init(); gauth2.init(); updateGoogleStatus(); }, 1500);
-  // Resize handles da Maya
   setTimeout(initResizeHandles, 100);
   loadAll();
 }
@@ -1127,12 +1141,21 @@ async function login() {
     setLoading(btn,false); return;
   }
   sessionStorage.setItem('al_logged','1');
+  // Lembrar por 30 dias se checkbox marcado
+  if (document.getElementById('remember-me')?.checked) {
+    ls.s('al_remember_until', Date.now() + 30 * 86400000);
+  } else {
+    ls.s('al_remember_until', '0');
+  }
   al.classList.remove('show'); setLoading(btn,false);
-  show('dashboard-page'); loadAll();
+  enterDashboard();
 }
 function logout() {
-  sessionStorage.removeItem('al_logged'); show('login-page');
-  document.getElementById('login-pwd').value=''; toast('Sessão encerrada.','in');
+  sessionStorage.removeItem('al_logged');
+  ls.s('al_remember_until','0');
+  show('login-page');
+  document.getElementById('login-pwd').value='';
+  toast('Sessão encerrada.','in');
 }
 
 /* ── API ── */
@@ -1886,13 +1909,23 @@ function makeGauth(slot) {
     slot,
 
     get token() {
-      if (!this._token) this._token = sessionStorage.getItem(tokenKey) || null;
+      if (this._token) return this._token;
+      // Tenta restaurar do localStorage com verificação de validade
+      try {
+        const saved = JSON.parse(ls.g(tokenKey) || 'null');
+        if (saved && saved.expires > Date.now()) { this._token = saved.value; }
+        else if (saved) { localStorage.removeItem(tokenKey); }
+      } catch {}
       return this._token;
     },
     set token(v) {
       this._token = v;
-      if (v) sessionStorage.setItem(tokenKey, v);
-      else   sessionStorage.removeItem(tokenKey);
+      if (v) {
+        // Tokens Google duram 1h — gravamos com validade de 55min para segurança
+        ls.s(tokenKey, JSON.stringify({ value: v, expires: Date.now() + 55 * 60000 }));
+      } else {
+        localStorage.removeItem(tokenKey);
+      }
       this._updateStatus();
     },
 
