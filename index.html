@@ -418,12 +418,21 @@
     .tab-panel.active { display:block; }
 
     /* ── Maya Chat Panel ── */
-    .maya-panel { display:grid; grid-template-columns:300px 1fr 260px; height:calc(100vh - 116px); overflow:hidden; }
-    @media(max-width:900px){ .maya-panel{grid-template-columns:240px 1fr; } .maya-sidebar-right{display:none;} }
-    @media(max-width:600px){ .maya-panel{grid-template-columns:1fr;} .conv-list-panel{display:none;} .conv-list-panel.mobile-show{display:flex;} }
+    .maya-panel { display:flex; height:calc(100vh - 116px); overflow:hidden; }
+    @media(max-width:900px){ .maya-sidebar-right{display:none!important;} }
+    @media(max-width:600px){ .conv-list-panel{display:none;} .conv-list-panel.mobile-show{display:flex!important;} }
+
+    /* Resize handles */
+    .resize-handle {
+      width:5px; cursor:col-resize; flex-shrink:0;
+      background:var(--border2); transition:background .15s;
+      position:relative; z-index:10;
+    }
+    .resize-handle:hover, .resize-handle.dragging { background:var(--teal); }
 
     /* Conversation list */
-    .conv-list-panel { display:flex; flex-direction:column; border-right:1px solid var(--border2); background:var(--surface); overflow:hidden; }
+    .conv-list-panel { display:flex; flex-direction:column; border-right:none; background:var(--surface); overflow:hidden; width:300px; min-width:180px; max-width:520px; flex-shrink:0; }
+    .chat-panel-wrap  { flex:1; display:flex; flex-direction:column; background:var(--bg); overflow:hidden; min-width:0; }
     .conv-list-head { padding:14px 16px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .conv-list-head h3 { font-size:.85rem; font-weight:700; }
     .conv-search { width:100%; padding:7px 10px; background:var(--bg2); border:1px solid var(--border2); border-radius:6px; color:var(--text); font-size:.75rem; font-family:inherit; outline:none; }
@@ -432,7 +441,7 @@
     .conv-item { padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--border2); transition:background .15s; display:flex; align-items:flex-start; gap:10px; }
     .conv-item:hover { background:var(--bg2); }
     .conv-item.active { background:var(--teal-dim); border-left:3px solid var(--teal); }
-    .conv-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--teal),#a07800); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; color:#080810; flex-shrink:0; }
+    .conv-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; color:#fff; flex-shrink:0; }
     .conv-info { flex:1; min-width:0; }
     .conv-name { font-size:.8rem; font-weight:600; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .conv-preview { font-size:.72rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -444,7 +453,7 @@
     .conv-status.human{ background:rgba(16,232,154,.15); color:var(--green); }
 
     /* Chat view */
-    .chat-panel { display:flex; flex-direction:column; background:var(--bg); overflow:hidden; }
+    .chat-panel { flex:1; display:flex; flex-direction:column; background:var(--bg); overflow:hidden; min-width:0; }
     .chat-empty { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; color:var(--muted); }
     .chat-header { padding:12px 16px; border-bottom:1px solid var(--border2); background:var(--surface); display:flex; align-items:center; gap:12px; }
     .chat-header-info { flex:1; }
@@ -462,7 +471,7 @@
     .chat-input:focus { border-color:var(--teal); }
 
     /* Maya right sidebar */
-    .maya-sidebar-right { display:flex; flex-direction:column; border-left:1px solid var(--border2); background:var(--surface); overflow-y:auto; }
+    .maya-sidebar-right { display:flex; flex-direction:column; border-left:1px solid var(--border2); background:var(--surface); overflow-y:auto; flex-shrink:0; }
     .sidebar-section { padding:16px; border-bottom:1px solid var(--border2); }
     .sidebar-section h4 { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px; }
     .contact-field { margin-bottom:8px; }
@@ -475,7 +484,18 @@
     .agent-item { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border2); font-size:.78rem; }
     .agent-item:last-child { border-bottom:none; }
     .agent-dot { width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0; }
-    .agent-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--teal),#a07800); display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; color:#080810; flex-shrink:0; }
+    .agent-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; color:#fff; flex-shrink:0; }
+
+    /* Maya right sidebar */
+    .maya-sidebar-right { width:280px; min-width:220px; max-width:400px; flex-shrink:0; }
+
+    /* Contact notes */
+    .note-input { width:100%; padding:7px 10px; background:var(--bg2); border:1px solid var(--border2); border-radius:6px; color:var(--text); font-size:.76rem; font-family:inherit; outline:none; transition:border-color .2s; margin-bottom:6px; }
+    .note-input:focus { border-color:var(--teal); }
+    .note-input::placeholder { color:var(--muted); }
+    .note-textarea { resize:vertical; min-height:72px; line-height:1.5; }
+    .note-label { font-size:.67rem; color:var(--muted); margin-bottom:3px; display:flex; align-items:center; gap:4px; }
+    .note-save-badge { font-size:.6rem; color:var(--green); opacity:0; transition:opacity .3s; }
 
     /* ── Contacts table ── */
     .contacts-table-wrap { overflow-x:auto; margin-top:4px; }
@@ -630,8 +650,8 @@
   <div class="tab-panel" id="tab-maya">
     <div class="maya-panel">
 
-      <!-- Coluna 1: Lista de conversas -->
-      <div class="conv-list-panel">
+      <!-- Coluna 1: Lista de conversas (largura ajustável) -->
+      <div class="conv-list-panel" id="conv-list-panel">
         <div class="conv-list-head">
           <h3>💬 Conversas</h3>
           <button class="btn btn-teal" style="font-size:.7rem;padding:5px 10px" onclick="loadConversations()">↻</button>
@@ -648,6 +668,9 @@
           <div style="padding:30px;text-align:center;color:var(--muted);font-size:.8rem">Clique em ↻ para carregar conversas</div>
         </div>
       </div>
+
+      <!-- Resize handle 1 -->
+      <div class="resize-handle" id="rh-left" title="Arraste para redimensionar"></div>
 
       <!-- Coluna 2: Chat -->
       <div class="chat-panel" id="chat-panel">
@@ -679,8 +702,11 @@
         </div>
       </div>
 
+      <!-- Resize handle 2 -->
+      <div class="resize-handle" id="rh-right" title="Arraste para redimensionar"></div>
+
       <!-- Coluna 3: Sidebar direita -->
-      <div class="maya-sidebar-right">
+      <div class="maya-sidebar-right" id="maya-sidebar-right">
         <!-- Controle do atendente -->
         <div class="sidebar-section">
           <h4>Atendente</h4>
@@ -695,6 +721,27 @@
         <div class="sidebar-section" id="contact-info-panel">
           <h4>Contato</h4>
           <div style="color:var(--muted);font-size:.78rem">Selecione uma conversa</div>
+        </div>
+        <!-- Notas do contato (persistentes) -->
+        <div class="sidebar-section" id="contact-notes-panel" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <h4 style="margin-bottom:0">📝 Anotações</h4>
+            <span class="note-save-badge" id="note-saved-badge">✓ salvo</span>
+          </div>
+          <div class="note-label">🏢 Empresa</div>
+          <input class="note-input" id="note-empresa" placeholder="Nome da empresa..." oninput="autoSaveNote()" />
+          <div class="note-label">✉️ E-mail</div>
+          <input class="note-input" id="note-email" type="email" placeholder="email@empresa.com" oninput="autoSaveNote()" />
+          <div class="note-label">🌐 Website</div>
+          <input class="note-input" id="note-website" placeholder="https://..." oninput="autoSaveNote()" />
+          <div class="note-label">📸 Instagram</div>
+          <input class="note-input" id="note-instagram" placeholder="@usuario" oninput="autoSaveNote()" />
+          <div class="note-label">💼 LinkedIn</div>
+          <input class="note-input" id="note-linkedin" placeholder="linkedin.com/in/..." oninput="autoSaveNote()" />
+          <div class="note-label">📱 WhatsApp alternativo</div>
+          <input class="note-input" id="note-whatsapp2" placeholder="+55 (00) 0 0000-0000" oninput="autoSaveNote()" />
+          <div class="note-label">📌 Observações</div>
+          <textarea class="note-input note-textarea" id="note-obs" placeholder="Informações adicionais, status do lead, contexto..." oninput="autoSaveNote()"></textarea>
         </div>
         <!-- Status do bot -->
         <div class="sidebar-section">
@@ -1031,6 +1078,8 @@ async function init() {
   updateCostDisplay();
   // Inicializa Google (GIS carrega async — aguarda 1.5s)
   setTimeout(() => { gauth.init(); gauth2.init(); updateGoogleStatus(); }, 1500);
+  // Resize handles da Maya
+  setTimeout(initResizeHandles, 100);
   loadAll();
 }
 
@@ -1279,6 +1328,64 @@ async function loadConversations() {
   }
 }
 
+/* ── Avatar color palette ── */
+const AVATAR_PALETTE = [
+  ['#e05c5c','#b83232'], // vermelho
+  ['#e0855c','#b85c32'], // laranja
+  ['#e0b45c','#b88c32'], // âmbar
+  ['#6bbf59','#3d8c2d'], // verde
+  ['#4caf92','#2b7a64'], // esmeralda
+  ['#4c93c7','#2b5f8a'], // azul
+  ['#6b5ce7','#4a3db5'], // violeta
+  ['#b45ce7','#8a3db5'], // roxo
+  ['#e75ca8','#b53d7e'], // rosa
+  ['#5cb8e7','#2b7aa8'], // ciano
+];
+function avatarColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
+}
+function avatarStyle(str) {
+  const [c1, c2] = avatarColor(str);
+  return `background:linear-gradient(135deg,${c1},${c2})`;
+}
+
+/* ── Column resize ── */
+function initResizeHandles() {
+  setupResize('rh-left',  'conv-list-panel', 'width');
+  setupResize('rh-right', 'maya-sidebar-right', 'width', true);
+}
+function setupResize(handleId, targetId, prop, fromRight=false) {
+  const handle = document.getElementById(handleId);
+  const target = document.getElementById(targetId);
+  if (!handle || !target) return;
+  let startX, startW;
+  handle.addEventListener('mousedown', e => {
+    startX = e.clientX;
+    startW = target.getBoundingClientRect().width;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    const onMove = ev => {
+      const delta = fromRight ? (startX - ev.clientX) : (ev.clientX - startX);
+      const min   = parseInt(target.style.minWidth || 180);
+      const max   = parseInt(target.style.maxWidth || 520);
+      target.style.width = Math.max(min, Math.min(max, startW + delta)) + 'px';
+    };
+    const onUp = () => {
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    e.preventDefault();
+  });
+}
+
 function renderConvList(convs) {
   const list = document.getElementById('conv-list');
   const agents = getAgents();
@@ -1302,7 +1409,7 @@ function renderConvList(convs) {
     const isHuman = c._humanMode;
     const convId  = c.id || c.remoteJid || phone+'@s.whatsapp.net';
     return `<div class="conv-item" id="conv-${phone}" onclick="openChat('${convId}','${name.replace(/'/g,"\\'")}','${phone}')">
-      <div class="conv-avatar">${initials}</div>
+      <div class="conv-avatar" style="${avatarStyle(phone||name)}">${initials}</div>
       <div class="conv-info">
         <div class="conv-name">${name}</div>
         <div class="conv-preview">${preview.slice(0,50)}</div>
@@ -1336,8 +1443,12 @@ async function openChat(convId, name, phone) {
   const ca = document.getElementById('chat-active'); ca.style.display='flex';
   document.getElementById('chat-name').textContent = name;
   document.getElementById('chat-sub').textContent  = `+${phone}`;
+  // Avatar do cabeçalho com cor do contato
+  const ca = document.getElementById('chat-avatar');
+  if (ca) { ca.textContent = name.slice(0,2).toUpperCase(); ca.style.cssText = avatarStyle(phone||name)+';width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:#fff;flex-shrink:0'; }
   // Atualiza info lateral
   renderContactInfo(name, phone);
+  loadContactNotes(phone);
   checkBotStatus(phone);
   await loadChatMessages(currentChat);
 }
@@ -1451,17 +1562,74 @@ function renderContactInfo(name, phone) {
   const panel = document.getElementById('contact-info-panel');
   const conv  = allConvs.find(c=>(c.id||c.remoteJid||'').includes(phone));
   const agent = getAgents().find(a=>a.id===conv?._assignedAgent);
+  const [c1]  = avatarColor(phone||name);
   panel.innerHTML=`
-    <h4>Contato</h4>
-    <div class="contact-field"><label>Nome</label><span>${name}</span></div>
-    <div class="contact-field"><label>WhatsApp</label><span>+${phone}</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="${avatarStyle(phone||name)};width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;color:#fff;flex-shrink:0">${name.slice(0,2).toUpperCase()}</div>
+      <div><div style="font-weight:700;font-size:.85rem">${name}</div><div style="font-size:.72rem;color:var(--muted)">+${phone}</div></div>
+    </div>
+    <h4 style="margin-bottom:8px">Contato</h4>
     <div class="contact-field"><label>Atendente</label><span>${agent?.name||'Não atribuído'}</span></div>
-    <div class="contact-field"><label>Mensagens</label><span>${conv?.unreadCount||0} não lidas</span></div>
-    <div style="margin-top:10px">
+    <div class="contact-field"><label>Não lidas</label><span>${conv?.unreadCount||0}</span></div>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
       <a class="btn btn-ghost" href="https://wa.me/${phone}" target="_blank" style="font-size:.72rem;width:100%;justify-content:center">
         💬 Abrir no WhatsApp
       </a>
     </div>`;
+}
+
+/* ══════════════════════════════════════
+   CONTACT NOTES (persistentes em localStorage)
+══════════════════════════════════════ */
+let _noteSaveTimer = null;
+
+function loadContactNotes(phone) {
+  const panel = document.getElementById('contact-notes-panel');
+  if (!panel) return;
+  panel.style.display = 'block';
+
+  const raw   = ls.g(`cnotes_${phone}`);
+  const notes = raw ? JSON.parse(raw) : {};
+
+  document.getElementById('note-empresa').value    = notes.empresa    || '';
+  document.getElementById('note-email').value      = notes.email      || '';
+  document.getElementById('note-website').value    = notes.website    || '';
+  document.getElementById('note-instagram').value  = notes.instagram  || '';
+  document.getElementById('note-linkedin').value   = notes.linkedin   || '';
+  document.getElementById('note-whatsapp2').value  = notes.whatsapp2  || '';
+  document.getElementById('note-obs').value        = notes.obs        || '';
+
+  // Guarda o phone atual nos inputs para o autoSave saber qual contato
+  panel.dataset.phone = phone;
+  document.getElementById('note-saved-badge').style.opacity = '0';
+}
+
+function autoSaveNote() {
+  clearTimeout(_noteSaveTimer);
+  _noteSaveTimer = setTimeout(saveContactNotes, 800);
+}
+
+function saveContactNotes() {
+  const panel = document.getElementById('contact-notes-panel');
+  if (!panel) return;
+  const phone = panel.dataset.phone;
+  if (!phone) return;
+
+  const notes = {
+    empresa:   document.getElementById('note-empresa').value,
+    email:     document.getElementById('note-email').value,
+    website:   document.getElementById('note-website').value,
+    instagram: document.getElementById('note-instagram').value,
+    linkedin:  document.getElementById('note-linkedin').value,
+    whatsapp2: document.getElementById('note-whatsapp2').value,
+    obs:       document.getElementById('note-obs').value,
+  };
+  ls.s(`cnotes_${phone}`, JSON.stringify(notes));
+
+  // Badge "salvo"
+  const badge = document.getElementById('note-saved-badge');
+  badge.style.opacity = '1';
+  setTimeout(() => { badge.style.opacity = '0'; }, 2000);
 }
 
 /* ══════════════════════════════════════
