@@ -407,6 +407,74 @@
     .prosp-input:focus { border-color:var(--teal); }
     .prosp-input::placeholder { color:var(--muted); }
 
+    /* ── Tabs ── */
+    .dash-tabs { display:flex; gap:2px; padding:0 24px; background:var(--bg2); border-bottom:1px solid var(--border2); }
+    .dash-tab { padding:11px 18px; font-size:.8rem; font-weight:600; color:var(--muted); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; font-family:inherit; }
+    .dash-tab:hover { color:var(--text); }
+    .dash-tab.active { color:var(--teal); border-bottom-color:var(--teal); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* ── Maya Chat Panel ── */
+    .maya-panel { display:grid; grid-template-columns:300px 1fr 260px; height:calc(100vh - 116px); overflow:hidden; }
+    @media(max-width:900px){ .maya-panel{grid-template-columns:240px 1fr; } .maya-sidebar-right{display:none;} }
+    @media(max-width:600px){ .maya-panel{grid-template-columns:1fr;} .conv-list-panel{display:none;} .conv-list-panel.mobile-show{display:flex;} }
+
+    /* Conversation list */
+    .conv-list-panel { display:flex; flex-direction:column; border-right:1px solid var(--border2); background:var(--surface); overflow:hidden; }
+    .conv-list-head { padding:14px 16px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .conv-list-head h3 { font-size:.85rem; font-weight:700; }
+    .conv-search { width:100%; padding:7px 10px; background:var(--bg2); border:1px solid var(--border2); border-radius:6px; color:var(--text); font-size:.75rem; font-family:inherit; outline:none; }
+    .conv-search:focus { border-color:var(--teal); }
+    .conv-list { flex:1; overflow-y:auto; }
+    .conv-item { padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--border2); transition:background .15s; display:flex; align-items:flex-start; gap:10px; }
+    .conv-item:hover { background:var(--bg2); }
+    .conv-item.active { background:var(--teal-dim); border-left:3px solid var(--teal); }
+    .conv-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--teal),#a07800); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; color:#080810; flex-shrink:0; }
+    .conv-info { flex:1; min-width:0; }
+    .conv-name { font-size:.8rem; font-weight:600; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .conv-preview { font-size:.72rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .conv-meta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+    .conv-time { font-size:.65rem; color:var(--muted); }
+    .conv-badge { width:18px; height:18px; border-radius:50%; background:var(--teal); color:#080810; font-size:.6rem; font-weight:800; display:flex; align-items:center; justify-content:center; }
+    .conv-status { font-size:.6rem; padding:1px 5px; border-radius:99px; font-weight:700; }
+    .conv-status.bot  { background:rgba(212,168,0,.15); color:var(--teal); }
+    .conv-status.human{ background:rgba(16,232,154,.15); color:var(--green); }
+
+    /* Chat view */
+    .chat-panel { display:flex; flex-direction:column; background:var(--bg); overflow:hidden; }
+    .chat-empty { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; color:var(--muted); }
+    .chat-header { padding:12px 16px; border-bottom:1px solid var(--border2); background:var(--surface); display:flex; align-items:center; gap:12px; }
+    .chat-header-info { flex:1; }
+    .chat-header-name { font-size:.9rem; font-weight:700; }
+    .chat-header-sub  { font-size:.72rem; color:var(--muted); margin-top:1px; }
+    .chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:8px; }
+    .msg-bubble { max-width:75%; padding:9px 12px; border-radius:12px; font-size:.8rem; line-height:1.5; word-break:break-word; }
+    .msg-bubble.sent { background:var(--teal-dim); border:1px solid rgba(212,168,0,.2); border-bottom-right-radius:3px; align-self:flex-end; }
+    .msg-bubble.recv { background:var(--card); border:1px solid var(--border2); border-bottom-left-radius:3px; align-self:flex-start; }
+    .msg-bubble.bot-msg { background:rgba(99,102,241,.1); border:1px solid rgba(99,102,241,.2); align-self:flex-start; }
+    .msg-time { font-size:.62rem; color:var(--muted); margin-top:3px; text-align:right; }
+    .msg-sender { font-size:.65rem; color:var(--teal); font-weight:700; margin-bottom:2px; }
+    .chat-input-area { padding:12px 16px; border-top:1px solid var(--border2); background:var(--surface); display:flex; gap:8px; align-items:flex-end; }
+    .chat-input { flex:1; padding:10px 13px; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); font-size:.82rem; font-family:inherit; outline:none; resize:none; max-height:100px; transition:border-color .2s; }
+    .chat-input:focus { border-color:var(--teal); }
+
+    /* Maya right sidebar */
+    .maya-sidebar-right { display:flex; flex-direction:column; border-left:1px solid var(--border2); background:var(--surface); overflow-y:auto; }
+    .sidebar-section { padding:16px; border-bottom:1px solid var(--border2); }
+    .sidebar-section h4 { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px; }
+    .contact-field { margin-bottom:8px; }
+    .contact-field label { font-size:.68rem; color:var(--muted); display:block; margin-bottom:2px; }
+    .contact-field span { font-size:.78rem; color:var(--text); }
+    .takeover-btn { width:100%; justify-content:center; margin-bottom:6px; }
+    .agent-select { width:100%; padding:7px 10px; background:var(--bg2); border:1px solid var(--border2); border-radius:6px; color:var(--text); font-size:.78rem; font-family:inherit; outline:none; }
+
+    /* Agent list */
+    .agent-item { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border2); font-size:.78rem; }
+    .agent-item:last-child { border-bottom:none; }
+    .agent-dot { width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0; }
+    .agent-avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--teal),#a07800); display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:800; color:#080810; flex-shrink:0; }
+
     /* ── Contacts table ── */
     .contacts-table-wrap { overflow-x:auto; margin-top:4px; }
     .contacts-table { width:100%; border-collapse:collapse; font-size:.74rem; }
@@ -524,39 +592,133 @@
     </div>
   </nav>
 
-  <main class="main">
-    <div class="page-header">
-      <div class="page-header-left">
-        <h2>Workflows</h2>
-        <p id="last-sync">Carregando...</p>
-      </div>
-      <button class="btn btn-ghost" style="font-size:.75rem" onclick="loadAll()">↻ Atualizar</button>
-    </div>
+  <!-- Tabs -->
+  <div class="dash-tabs">
+    <button class="dash-tab active" id="tab-btn-workflows" onclick="switchTab('workflows')">⚡ Workflows</button>
+    <button class="dash-tab" id="tab-btn-maya" onclick="switchTab('maya')">🤖 Maya · Atendimento</button>
+  </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total</div>
-        <div class="stat-value teal" id="st-total">2</div>
+  <!-- Tab: Workflows -->
+  <div class="tab-panel active" id="tab-workflows">
+    <main class="main">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Workflows</h2>
+          <p id="last-sync">Carregando...</p>
+        </div>
+        <button class="btn btn-ghost" style="font-size:.75rem" onclick="loadAll()">↻ Atualizar</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Ativos</div>
-        <div class="stat-value green" id="st-active">–</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value teal" id="st-total">2</div></div>
+        <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value green" id="st-active">–</div></div>
+        <div class="stat-card"><div class="stat-label">Inativos</div><div class="stat-value red" id="st-inactive">–</div></div>
+        <div class="stat-card"><div class="stat-label">Execuções hoje</div><div class="stat-value yellow" id="st-execs">–</div></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Inativos</div>
-        <div class="stat-value red" id="st-inactive">–</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Execuções hoje</div>
-        <div class="stat-value yellow" id="st-execs">–</div>
-      </div>
-    </div>
+      <div class="section-label">workflows</div>
+      <div class="wf-grid" id="wf-grid"></div>
+    </main>
+  </div>
 
-    <div class="section-label">workflows</div>
-    <div class="wf-grid" id="wf-grid">
-      <!-- cards gerados via JS -->
+  <!-- Tab: Maya Atendimento -->
+  <div class="tab-panel" id="tab-maya">
+    <div class="maya-panel">
+
+      <!-- Coluna 1: Lista de conversas -->
+      <div class="conv-list-panel">
+        <div class="conv-list-head">
+          <h3>💬 Conversas</h3>
+          <button class="btn btn-teal" style="font-size:.7rem;padding:5px 10px" onclick="loadConversations()">↻</button>
+        </div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--border2)">
+          <input class="conv-search" id="conv-search" placeholder="🔍 Buscar conversa..." oninput="filterConvs()" />
+        </div>
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border2);display:flex;gap:6px">
+          <button class="btn btn-ghost" style="font-size:.68rem;padding:4px 8px;flex:1" id="filter-all"    onclick="filterConvStatus('all')">Todas</button>
+          <button class="btn btn-ghost" style="font-size:.68rem;padding:4px 8px;flex:1" id="filter-human"  onclick="filterConvStatus('human')">👤 Humano</button>
+          <button class="btn btn-ghost" style="font-size:.68rem;padding:4px 8px;flex:1" id="filter-bot"    onclick="filterConvStatus('bot')">🤖 Bot</button>
+        </div>
+        <div class="conv-list" id="conv-list">
+          <div style="padding:30px;text-align:center;color:var(--muted);font-size:.8rem">Clique em ↻ para carregar conversas</div>
+        </div>
+      </div>
+
+      <!-- Coluna 2: Chat -->
+      <div class="chat-panel" id="chat-panel">
+        <div class="chat-empty" id="chat-empty">
+          <div style="font-size:3rem">🤖</div>
+          <div style="font-weight:700">Selecione uma conversa</div>
+          <div style="font-size:.8rem">Escolha um contato na lista ao lado</div>
+        </div>
+        <div id="chat-active" style="display:none;flex-direction:column;height:100%">
+          <div class="chat-header">
+            <div class="conv-avatar" id="chat-avatar">?</div>
+            <div class="chat-header-info">
+              <div class="chat-header-name" id="chat-name">–</div>
+              <div class="chat-header-sub" id="chat-sub">–</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-green" id="btn-takeover" onclick="takeover()" style="font-size:.74rem">👤 Assumir</button>
+              <button class="btn btn-ghost"  id="btn-returnbot" onclick="returnBot()" style="font-size:.74rem;display:none">🤖 Dev. ao Bot</button>
+              <button class="btn btn-ghost"  onclick="loadChatMessages(currentChat)" style="font-size:.74rem">↻</button>
+            </div>
+          </div>
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-area">
+            <textarea class="chat-input" id="chat-input" rows="1" placeholder="Digite uma mensagem..."
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+              oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            <button class="btn btn-teal" onclick="sendMessage()" style="padding:10px 14px">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna 3: Sidebar direita -->
+      <div class="maya-sidebar-right">
+        <!-- Controle do atendente -->
+        <div class="sidebar-section">
+          <h4>Atendente</h4>
+          <select class="agent-select" id="agent-select" onchange="assignAgent()">
+            <option value="">— Sem atendente —</option>
+          </select>
+          <div style="margin-top:10px">
+            <button class="btn btn-ghost takeover-btn" style="font-size:.74rem" onclick="openAgentManager()">⚙ Gerenciar Agentes</button>
+          </div>
+        </div>
+        <!-- Info do contato -->
+        <div class="sidebar-section" id="contact-info-panel">
+          <h4>Contato</h4>
+          <div style="color:var(--muted);font-size:.78rem">Selecione uma conversa</div>
+        </div>
+        <!-- Status do bot -->
+        <div class="sidebar-section">
+          <h4>Status do Bot</h4>
+          <div id="bot-status-display" style="font-size:.8rem;color:var(--muted)">–</div>
+        </div>
+      </div>
+
     </div>
-  </main>
+  </div>
+</div>
+
+<!-- Modal: Gerenciar Agentes -->
+<div id="agents-modal" class="overlay" onclick="closeOverlay(event,'agents-modal')">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3>⚙ Gerenciar Agentes</h3>
+      <button class="modal-x" onclick="closeById('agents-modal')">✕</button>
+    </div>
+    <div id="agents-list" style="margin-bottom:16px"></div>
+    <div class="divider"></div>
+    <h4 style="font-size:.8rem;font-weight:700;margin-bottom:12px">Adicionar Agente</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <input id="new-agent-name" class="form-input" placeholder="Nome *" />
+      <input id="new-agent-email" class="form-input" placeholder="E-mail ou WhatsApp" />
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeById('agents-modal')">Cancelar</button>
+      <button class="btn btn-teal" onclick="addAgent()">Adicionar</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -599,6 +761,23 @@
         <input id="s-pwd" class="form-input" type="password" placeholder="Nova senha (opcional)" />
         <button class="input-eye" onclick="eye('s-pwd',this)">👁</button>
       </div>
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:.78rem;font-weight:700;margin-bottom:12px">Evolution API (Maya · WhatsApp)</p>
+    <div class="form-group">
+      <label class="form-label">URL da Evolution API</label>
+      <input id="s-evo-url" class="form-input" placeholder="https://evo.seudominio.com" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key da Evolution</label>
+      <div class="input-wrap">
+        <input id="s-evo-key" class="form-input" type="password" placeholder="Sua API Key" />
+        <button class="input-eye" onclick="eye('s-evo-key',this)">👁</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome da Instância</label>
+      <input id="s-evo-inst" class="form-input" placeholder="angela" />
     </div>
     <div id="set-alert" class="alert alert-ok"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -871,6 +1050,313 @@ async function openExecs(id, name) {
   } catch(e) { body.innerHTML=`<p style="color:var(--red);padding:20px">Erro: ${e.message}</p>`; }
 }
 
+/* ══════════════════════════════════════
+   TABS
+══════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.dash-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`tab-btn-${tab}`).classList.add('active');
+  if (tab==='maya') { loadConversations(); populateAgentSelect(); }
+}
+
+/* ══════════════════════════════════════
+   EVOLUTION API
+══════════════════════════════════════ */
+const evo = {
+  base: ()=> (ls.g('evo_url')||'').replace(/\/$/,''),
+  key:  ()=> ls.g('evo_key')||'',
+  inst: ()=> ls.g('evo_inst')||'angela',
+  async call(path, opts={}) {
+    const r = await fetch(`${this.base()}${path}`, {
+      ...opts,
+      headers:{ 'apikey':this.key(), 'Content-Type':'application/json', ...(opts.headers||{}) }
+    });
+    if (!r.ok) throw new Error(`Evo HTTP ${r.status}`);
+    const t = await r.text(); return t ? JSON.parse(t) : {};
+  }
+};
+
+/* ══════════════════════════════════════
+   CONVERSATIONS
+══════════════════════════════════════ */
+let allConvs = [], currentChat = null, convFilter = 'all';
+
+async function loadConversations() {
+  const list = document.getElementById('conv-list');
+  list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px"><div class="spin teal"></div> Carregando...</div>`;
+  try {
+    const data = await evo.call(`/chat/findChats/${evo.inst()}`, { method:'POST', body: JSON.stringify({}) });
+    allConvs = Array.isArray(data) ? data : (data.chats || data.data || []);
+    // Ordena por última mensagem
+    allConvs.sort((a,b)=> (b.updatedAt||b.lastMsgTimestamp||0) - (a.updatedAt||a.lastMsgTimestamp||0));
+    renderConvList(allConvs);
+  } catch(e) {
+    list.innerHTML=`<div style="padding:20px;color:var(--red);font-size:.78rem">Erro: ${e.message}<br><small>Verifique URL e API Key da Evolution nas configurações</small></div>`;
+  }
+}
+
+function renderConvList(convs) {
+  const list = document.getElementById('conv-list');
+  const agents = getAgents();
+  // Filtra por status
+  let filtered = convFilter==='all' ? convs
+    : convs.filter(c => convFilter==='human' ? c._humanMode : !c._humanMode);
+  // Filtra por busca
+  const q = document.getElementById('conv-search')?.value.toLowerCase()||'';
+  if (q) filtered = filtered.filter(c=>(c.name||c.id||'').toLowerCase().includes(q));
+
+  if (!filtered.length) {
+    list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:.78rem">Nenhuma conversa encontrada</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(c=>{
+    const name    = c.name || c.pushName || formatPhone(c.id?.split('@')[0]||c.remoteJid?.split('@')[0]||'?');
+    const phone   = c.id?.split('@')[0] || c.remoteJid?.split('@')[0] || '';
+    const preview = c.lastMessage?.conversation || c.lastMessage?.extendedTextMessage?.text || c.preview || '...';
+    const time    = c.updatedAt||c.lastMsgTimestamp ? fmtTime(c.updatedAt||c.lastMsgTimestamp*1000) : '';
+    const initials= name.slice(0,2).toUpperCase();
+    const isHuman = c._humanMode;
+    const convId  = c.id || c.remoteJid || phone+'@s.whatsapp.net';
+    return `<div class="conv-item" id="conv-${phone}" onclick="openChat('${convId}','${name.replace(/'/g,"\\'")}','${phone}')">
+      <div class="conv-avatar">${initials}</div>
+      <div class="conv-info">
+        <div class="conv-name">${name}</div>
+        <div class="conv-preview">${preview.slice(0,50)}</div>
+      </div>
+      <div class="conv-meta">
+        <span class="conv-time">${time}</span>
+        <span class="conv-status ${isHuman?'human':'bot'}">${isHuman?'👤':'🤖'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterConvs() { renderConvList(allConvs); }
+function filterConvStatus(s) {
+  convFilter=s;
+  document.querySelectorAll('[id^="filter-"]').forEach(b=>b.classList.remove('btn-teal'));
+  document.getElementById(`filter-${s}`)?.classList.add('btn-teal');
+  renderConvList(allConvs);
+}
+
+/* ══════════════════════════════════════
+   CHAT
+══════════════════════════════════════ */
+async function openChat(convId, name, phone) {
+  currentChat = { id:convId, name, phone };
+  // Marca ativa
+  document.querySelectorAll('.conv-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`conv-${phone}`)?.classList.add('active');
+  // Mostra painel
+  document.getElementById('chat-empty').style.display='none';
+  const ca = document.getElementById('chat-active'); ca.style.display='flex';
+  document.getElementById('chat-name').textContent = name;
+  document.getElementById('chat-sub').textContent  = `+${phone}`;
+  // Atualiza info lateral
+  renderContactInfo(name, phone);
+  checkBotStatus(phone);
+  await loadChatMessages(currentChat);
+}
+
+async function loadChatMessages(chat) {
+  if (!chat) return;
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px"><div class="spin teal"></div></div>`;
+  try {
+    const data = await evo.call(`/chat/findMessages/${evo.inst()}`, {
+      method:'POST',
+      body: JSON.stringify({ where:{ key:{ remoteJid: chat.id } }, limit:50 })
+    });
+    const list = data.messages?.records || data.records || data || [];
+    if (!list.length) { msgs.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted)">Nenhuma mensagem</div>`; return; }
+    msgs.innerHTML = list.map(m=>{
+      const fromMe = m.key?.fromMe || m.fromMe;
+      const text   = m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || '[mídia]';
+      const time   = m.messageTimestamp ? new Date(m.messageTimestamp*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+      const cls    = fromMe ? 'sent' : 'recv';
+      return `<div class="msg-bubble ${cls}">
+        ${text}
+        <div class="msg-time">${time}</div>
+      </div>`;
+    }).join('');
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch(e) {
+    msgs.innerHTML=`<div style="padding:20px;color:var(--red);font-size:.78rem">Erro: ${e.message}</div>`;
+  }
+}
+
+async function sendMessage() {
+  if (!currentChat) return;
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value=''; inp.style.height='auto';
+  try {
+    await evo.call(`/message/sendText/${evo.inst()}`, {
+      method:'POST',
+      body: JSON.stringify({ number: currentChat.phone, text })
+    });
+    // Adiciona bolha imediata
+    const msgs = document.getElementById('chat-messages');
+    const now  = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    msgs.innerHTML += `<div class="msg-bubble sent">${text}<div class="msg-time">${now}</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch(e) { toast(`Erro ao enviar: ${e.message}`,'er'); }
+}
+
+/* ══════════════════════════════════════
+   TAKEOVER / BOT CONTROL
+══════════════════════════════════════ */
+function checkBotStatus(phone) {
+  const conv = allConvs.find(c=>(c.id||c.remoteJid||'').includes(phone));
+  const isHuman = conv?._humanMode || false;
+  updateTakeoverButtons(isHuman);
+  const disp = document.getElementById('bot-status-display');
+  if (disp) disp.innerHTML = isHuman
+    ? `<span style="color:var(--green)">👤 Atendimento Humano ativo</span>`
+    : `<span style="color:var(--teal)">🤖 Bot Maya respondendo</span>`;
+}
+
+function updateTakeoverButtons(isHuman) {
+  const bt = document.getElementById('btn-takeover');
+  const br = document.getElementById('btn-returnbot');
+  if (bt) bt.style.display = isHuman ? 'none' : '';
+  if (br) br.style.display = isHuman ? '' : 'none';
+}
+
+async function takeover() {
+  if (!currentChat) return;
+  if (!confirm(`Assumir atendimento de ${currentChat.name}?\nO bot Maya vai parar de responder.`)) return;
+  try {
+    // Envia #humano via Evolution API (webhook do n8n detecta fromMe=true)
+    await evo.call(`/message/sendText/${evo.inst()}`, {
+      method:'POST',
+      body: JSON.stringify({ number: currentChat.phone, text: '#humano' })
+    });
+    // Atualiza estado local
+    const conv = allConvs.find(c=>(c.id||c.remoteJid||'').includes(currentChat.phone));
+    if (conv) conv._humanMode = true;
+    updateTakeoverButtons(true);
+    checkBotStatus(currentChat.phone);
+    renderConvList(allConvs);
+    toast(`✓ Atendimento assumido — ${currentChat.name}`,'ok');
+  } catch(e) { toast(`Erro: ${e.message}`,'er'); }
+}
+
+async function returnBot() {
+  if (!currentChat) return;
+  if (!confirm(`Devolver ${currentChat.name} ao bot Maya?`)) return;
+  try {
+    await evo.call(`/message/sendText/${evo.inst()}`, {
+      method:'POST',
+      body: JSON.stringify({ number: currentChat.phone, text: '#bot' })
+    });
+    const conv = allConvs.find(c=>(c.id||c.remoteJid||'').includes(currentChat.phone));
+    if (conv) conv._humanMode = false;
+    updateTakeoverButtons(false);
+    checkBotStatus(currentChat.phone);
+    renderConvList(allConvs);
+    toast(`✓ Bot Maya reativado — ${currentChat.name}`,'ok');
+  } catch(e) { toast(`Erro: ${e.message}`,'er'); }
+}
+
+/* ══════════════════════════════════════
+   CONTACT INFO PANEL
+══════════════════════════════════════ */
+function renderContactInfo(name, phone) {
+  const panel = document.getElementById('contact-info-panel');
+  const conv  = allConvs.find(c=>(c.id||c.remoteJid||'').includes(phone));
+  const agent = getAgents().find(a=>a.id===conv?._assignedAgent);
+  panel.innerHTML=`
+    <h4>Contato</h4>
+    <div class="contact-field"><label>Nome</label><span>${name}</span></div>
+    <div class="contact-field"><label>WhatsApp</label><span>+${phone}</span></div>
+    <div class="contact-field"><label>Atendente</label><span>${agent?.name||'Não atribuído'}</span></div>
+    <div class="contact-field"><label>Mensagens</label><span>${conv?.unreadCount||0} não lidas</span></div>
+    <div style="margin-top:10px">
+      <a class="btn btn-ghost" href="https://wa.me/${phone}" target="_blank" style="font-size:.72rem;width:100%;justify-content:center">
+        💬 Abrir no WhatsApp
+      </a>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   AGENT MANAGEMENT
+══════════════════════════════════════ */
+function getAgents() { try { return JSON.parse(ls.g('maya_agents')||'[]'); } catch { return []; } }
+function saveAgents(a) { ls.s('maya_agents', JSON.stringify(a)); }
+
+function populateAgentSelect() {
+  const sel = document.getElementById('agent-select');
+  if (!sel) return;
+  const agents = getAgents();
+  sel.innerHTML = `<option value="">— Sem atendente —</option>` +
+    agents.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+function openAgentManager() {
+  renderAgentsList();
+  document.getElementById('agents-modal').classList.add('show');
+}
+
+function renderAgentsList() {
+  const agents = getAgents();
+  const el = document.getElementById('agents-list');
+  if (!agents.length) { el.innerHTML=`<p style="color:var(--muted);font-size:.78rem">Nenhum agente cadastrado ainda.</p>`; return; }
+  el.innerHTML = agents.map(a=>`
+    <div class="agent-item">
+      <div class="agent-avatar">${a.name.slice(0,2).toUpperCase()}</div>
+      <div style="flex:1">
+        <div style="font-weight:600">${a.name}</div>
+        <div style="font-size:.7rem;color:var(--muted)">${a.contact||''}</div>
+      </div>
+      <button class="btn btn-ghost" style="font-size:.7rem;padding:4px 8px" onclick="removeAgent('${a.id}')">✕</button>
+    </div>`).join('');
+}
+
+function addAgent() {
+  const name    = document.getElementById('new-agent-name').value.trim();
+  const contact = document.getElementById('new-agent-email').value.trim();
+  if (!name) { toast('Informe o nome do agente','er'); return; }
+  const agents = getAgents();
+  agents.push({ id: Date.now().toString(), name, contact });
+  saveAgents(agents);
+  document.getElementById('new-agent-name').value='';
+  document.getElementById('new-agent-email').value='';
+  renderAgentsList();
+  populateAgentSelect();
+  toast(`✓ Agente ${name} adicionado!`,'ok');
+}
+
+function removeAgent(id) {
+  const agents = getAgents().filter(a=>a.id!==id);
+  saveAgents(agents);
+  renderAgentsList();
+  populateAgentSelect();
+  toast('Agente removido','in');
+}
+
+function assignAgent() {
+  if (!currentChat) return;
+  const agentId = document.getElementById('agent-select').value;
+  const conv = allConvs.find(c=>(c.id||c.remoteJid||'').includes(currentChat.phone));
+  if (conv) conv._assignedAgent = agentId;
+  const agent = getAgents().find(a=>a.id===agentId);
+  toast(agent ? `✓ ${agent.name} atribuído a ${currentChat.name}` : 'Atendente removido','ok');
+}
+
+/* ── Helpers ── */
+function formatPhone(p) { return p.replace(/(\d{2})(\d{2})(\d{5})(\d{4})/,'($1) $2 $3-$4'); }
+function fmtTime(ts) {
+  const d = new Date(ts), now = new Date();
+  if (d.toDateString()===now.toDateString()) return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+}
+
+/* ── Salvar settings com Evo ── */
+
 /* ── Rodar Prospecção ── */
 async function runProspeccao() {
   const nicho  = document.getElementById('prosp-nicho')?.value.trim();
@@ -977,23 +1463,33 @@ function exportCSV() {
 }
 
 /* ── Settings modal ── */
-function openSettings() {
-  document.getElementById('s-url').value=ls.g('n8n_url')||'';
-  document.getElementById('s-key').value=ls.g('n8n_key')||'';
-  document.getElementById('s-pwd').value='';
-  document.getElementById('set-alert').classList.remove('show');
-  document.getElementById('set-modal').classList.add('show');
-}
 async function saveSettings() {
   const url=document.getElementById('s-url').value.trim().replace(/\/$/,'');
   const key=document.getElementById('s-key').value.trim();
   const pwd=document.getElementById('s-pwd').value;
+  const evoUrl  = document.getElementById('s-evo-url')?.value.trim().replace(/\/$/,'')||'';
+  const evoKey  = document.getElementById('s-evo-key')?.value.trim()||'';
+  const evoInst = document.getElementById('s-evo-inst')?.value.trim()||'angela';
   const al=document.getElementById('set-alert');
-  if (!url||!key){al.className='alert alert-err show'; al.textContent='URL e API Key obrigatórios.'; return;}
+  if (!url||!key){al.className='alert alert-err show'; al.textContent='URL e API Key do n8n obrigatórios.'; return;}
   ls.s('n8n_url',url); ls.s('n8n_key',key);
+  if (evoUrl)  ls.s('evo_url',evoUrl);
+  if (evoKey)  ls.s('evo_key',evoKey);
+  if (evoInst) ls.s('evo_inst',evoInst);
   if (pwd&&pwd.length>=4) ls.s('n8n_hash',await hash(pwd));
   al.className='alert alert-ok show'; al.textContent='✓ Configurações salvas!';
   setTimeout(()=>{ closeById('set-modal'); loadAll(); },1000);
+}
+
+function openSettings() {
+  document.getElementById('s-url').value=ls.g('n8n_url')||'';
+  document.getElementById('s-key').value=ls.g('n8n_key')||'';
+  document.getElementById('s-pwd').value='';
+  document.getElementById('s-evo-url').value=ls.g('evo_url')||'';
+  document.getElementById('s-evo-key').value=ls.g('evo_key')||'';
+  document.getElementById('s-evo-inst').value=ls.g('evo_inst')||'angela';
+  document.getElementById('set-alert').classList.remove('show');
+  document.getElementById('set-modal').classList.add('show');
 }
 
 /* ── Helpers ── */
