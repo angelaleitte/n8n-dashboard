@@ -1602,17 +1602,45 @@ function renderContactInfo(name, phone) {
 }
 
 /* ══════════════════════════════════════
-   CONTACT NOTES (persistentes em localStorage)
+   CONTACT NOTES — MySQL via n8n webhook
+   Fallback: localStorage (caso MySQL não configurado)
 ══════════════════════════════════════ */
 let _noteSaveTimer = null;
+const NOTES_WEBHOOK = () => `${ls.g('n8n_url')||''}/webhook/contact-notes`;
 
-function loadContactNotes(phone) {
+async function loadContactNotes(phone) {
   const panel = document.getElementById('contact-notes-panel');
   if (!panel) return;
   panel.style.display = 'block';
+  panel.dataset.phone = phone;
+  document.getElementById('note-saved-badge').style.opacity = '0';
 
-  const raw   = ls.g(`cnotes_${phone}`);
-  const notes = raw ? JSON.parse(raw) : {};
+  // Tenta MySQL primeiro, fallback para localStorage
+  let notes = {};
+  try {
+    const r = await fetch(NOTES_WEBHOOK(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get', phone })
+    });
+    if (r.ok) {
+      const data = await r.json();
+      // n8n retorna {} se não encontrou, ou o objeto com os campos
+      if (data && data.phone) {
+        notes = data;
+        // Sincroniza cache local
+        ls.s(`cnotes_${phone}`, JSON.stringify(notes));
+      } else {
+        // MySQL sem dado — tenta cache local
+        const raw = ls.g(`cnotes_${phone}`);
+        if (raw) notes = JSON.parse(raw);
+      }
+    }
+  } catch {
+    // MySQL não configurado ainda — usa localStorage
+    const raw = ls.g(`cnotes_${phone}`);
+    if (raw) notes = JSON.parse(raw);
+  }
 
   document.getElementById('note-empresa').value    = notes.empresa    || '';
   document.getElementById('note-email').value      = notes.email      || '';
@@ -1621,10 +1649,6 @@ function loadContactNotes(phone) {
   document.getElementById('note-linkedin').value   = notes.linkedin   || '';
   document.getElementById('note-whatsapp2').value  = notes.whatsapp2  || '';
   document.getElementById('note-obs').value        = notes.obs        || '';
-
-  // Guarda o phone atual nos inputs para o autoSave saber qual contato
-  panel.dataset.phone = phone;
-  document.getElementById('note-saved-badge').style.opacity = '0';
 }
 
 function autoSaveNote() {
@@ -1632,7 +1656,7 @@ function autoSaveNote() {
   _noteSaveTimer = setTimeout(saveContactNotes, 800);
 }
 
-function saveContactNotes() {
+async function saveContactNotes() {
   const panel = document.getElementById('contact-notes-panel');
   if (!panel) return;
   const phone = panel.dataset.phone;
@@ -1647,12 +1671,35 @@ function saveContactNotes() {
     whatsapp2: document.getElementById('note-whatsapp2').value,
     obs:       document.getElementById('note-obs').value,
   };
+
+  // Sempre salva em localStorage (cache imediato)
   ls.s(`cnotes_${phone}`, JSON.stringify(notes));
 
-  // Badge "salvo"
-  const badge = document.getElementById('note-saved-badge');
-  badge.style.opacity = '1';
-  setTimeout(() => { badge.style.opacity = '0'; }, 2000);
+  // Tenta salvar no MySQL via webhook
+  try {
+    const r = await fetch(NOTES_WEBHOOK(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save', phone, ...notes })
+    });
+    const badge = document.getElementById('note-saved-badge');
+    if (r.ok) {
+      badge.textContent = '✓ salvo';
+      badge.style.color = 'var(--green)';
+    } else {
+      badge.textContent = '💾 local';
+      badge.style.color = 'var(--yellow)';
+    }
+    badge.style.opacity = '1';
+    setTimeout(() => { badge.style.opacity = '0'; }, 2500);
+  } catch {
+    // Sem MySQL — salvo só localmente
+    const badge = document.getElementById('note-saved-badge');
+    badge.textContent = '💾 local';
+    badge.style.color = 'var(--yellow)';
+    badge.style.opacity = '1';
+    setTimeout(() => { badge.style.opacity = '0'; }, 2500);
+  }
 }
 
 /* ══════════════════════════════════════
