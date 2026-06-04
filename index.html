@@ -614,8 +614,8 @@
         <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value green" id="st-active">–</div></div>
         <div class="stat-card"><div class="stat-label">Inativos</div><div class="stat-value red" id="st-inactive">–</div></div>
         <div class="stat-card"><div class="stat-label">Execuções hoje</div><div class="stat-value yellow" id="st-execs">–</div></div>
-        <div class="stat-card" onclick="resetCost()" title="Clique para resetar" style="cursor:pointer">
-          <div class="stat-label">Custo IA (painel)</div>
+        <div class="stat-card" onclick="openApiUsage()" title="Ver uso das APIs" style="cursor:pointer">
+          <div class="stat-label" style="display:flex;align-items:center;gap:4px">OpenAI · Painel <span style="font-size:.65rem;opacity:.6" title="Apenas chamadas diretas deste painel">ⓘ</span></div>
           <div class="stat-value" id="st-cost" style="color:var(--teal);font-size:1rem">$0.000</div>
         </div>
       </div>
@@ -754,6 +754,90 @@
 </div>
 
 <!-- ══════════════════════════════════════
+     MODAL — Detalhes do Evento (Calendar)
+══════════════════════════════════════ -->
+<div id="cal-event-modal" class="overlay" onclick="closeOverlay(event,'cal-event-modal')">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="cev-title">Evento</h3>
+      <button class="modal-x" onclick="closeById('cal-event-modal')">✕</button>
+    </div>
+    <div id="cev-body" style="font-size:.84rem;line-height:1.7"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <a id="cev-gcal-link" href="#" target="_blank" class="btn btn-teal" style="font-size:.78rem">📅 Abrir no Google Calendar</a>
+      <a id="cev-meet-link" href="#" target="_blank" class="btn btn-ghost" style="font-size:.78rem;display:none">📹 Entrar no Meet</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL — Uso das APIs
+══════════════════════════════════════ -->
+<div id="api-usage-modal" class="overlay" onclick="closeOverlay(event,'api-usage-modal')">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head">
+      <h3>📊 Uso das APIs</h3>
+      <button class="modal-x" onclick="closeById('api-usage-modal')">✕</button>
+    </div>
+
+    <!-- OpenAI -->
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <p style="font-size:.82rem;font-weight:700">🤖 OpenAI (GPT)</p>
+        <a href="https://platform.openai.com/usage" target="_blank" style="font-size:.72rem;color:var(--teal)">Ver uso completo →</a>
+      </div>
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border2)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">Custo neste painel</div>
+            <div style="font-size:1.1rem;font-weight:700;color:var(--teal)" id="au-panel-cost">$0.0000</div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">Tokens usados</div>
+            <div style="font-size:1.1rem;font-weight:700" id="au-panel-tokens">0</div>
+          </div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);padding:8px;background:var(--teal-dim);border-radius:6px;line-height:1.5">
+          ⚠️ <strong>Este painel rastreia apenas chamadas diretas que ele mesmo faz à OpenAI.</strong><br>
+          O custo do agente Maya (que roda via n8n) aparece em <a href="https://platform.openai.com/usage" target="_blank" style="color:var(--teal)">platform.openai.com/usage</a>.
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-ghost" style="font-size:.74rem" onclick="resetCost()">🗑 Resetar contador</button>
+          <a href="https://platform.openai.com/usage" target="_blank" class="btn btn-ghost" style="font-size:.74rem">↗ OpenAI Usage Dashboard</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Google APIs -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <p style="font-size:.82rem;font-weight:700">📅 Google APIs (Calendar · Sheets)</p>
+        <a href="https://console.cloud.google.com/apis/dashboard" target="_blank" style="font-size:.72rem;color:var(--teal)">Google Console →</a>
+      </div>
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border2)">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">Conta 1</div>
+            <div style="font-size:.82rem;font-weight:600" id="au-g1-status">–</div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">Conta 2</div>
+            <div style="font-size:.82rem;font-weight:600" id="au-g2-status">–</div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">Chamadas (sessão)</div>
+            <div style="font-size:.82rem;font-weight:600" id="au-g-calls">0</div>
+          </div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);padding:8px;background:rgba(16,232,154,.07);border-radius:6px;line-height:1.5">
+          ✅ <strong>Google Calendar e Google Sheets APIs são gratuitas</strong> nas cotas normais (milhares de chamadas/dia). Não há custo financeiro para uso típico.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      MODAL settings
 ══════════════════════════════════════ -->
 <div id="set-modal" class="overlay" onclick="closeOverlay(event,'set-modal')">
@@ -810,17 +894,38 @@
     </div>
     <div class="divider"></div>
     <p style="font-size:.78rem;font-weight:700;margin-bottom:4px">📅 Google (Calendar · Sheets)</p>
-    <p style="font-size:.72rem;color:var(--muted);margin-bottom:12px">Precisa de um projeto no <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--teal)">Google Cloud Console</a> com OAuth 2.0 Web Client ID e o domínio do dashboard autorizado.</p>
-    <div class="form-group">
-      <label class="form-label">Google Client ID</label>
-      <input id="s-google-cid" class="form-input" placeholder="xxx.apps.googleusercontent.com" />
+    <p style="font-size:.72rem;color:var(--muted);margin-bottom:12px">Crie um OAuth 2.0 Client ID no <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--teal)">Google Cloud Console</a> · tipo "Web App" · com o domínio do painel autorizado.</p>
+
+    <!-- Conta 1 -->
+    <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px;border:1px solid var(--border2);margin-bottom:10px">
+      <p style="font-size:.72rem;font-weight:700;color:var(--teal);margin-bottom:8px">Conta 1 (principal)</p>
+      <div class="form-group" style="margin-bottom:8px">
+        <label class="form-label">Google Client ID</label>
+        <input id="s-google-cid" class="form-input" placeholder="xxx.apps.googleusercontent.com" />
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-ghost" id="google-connect-btn" onclick="gauth.connect()" style="font-size:.74rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:5px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Conectar
+        </button>
+        <span id="google-status" style="font-size:.74rem;color:var(--muted)">–</span>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <button class="btn btn-ghost" id="google-connect-btn" onclick="googleConnect()" style="font-size:.78rem">
-        <svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:6px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Conectar Google
-      </button>
-      <span id="google-status" style="font-size:.75rem;color:var(--muted)">–</span>
+
+    <!-- Conta 2 -->
+    <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px;border:1px solid var(--border2);margin-bottom:14px">
+      <p style="font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:8px">Conta 2 (adicional · opcional)</p>
+      <div class="form-group" style="margin-bottom:8px">
+        <label class="form-label">Google Client ID</label>
+        <input id="s-google-cid2" class="form-input" placeholder="xxx.apps.googleusercontent.com" />
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-ghost" id="google-connect-btn2" onclick="gauth2.connect()" style="font-size:.74rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:5px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Conectar
+        </button>
+        <span id="google-status2" style="font-size:.74rem;color:var(--muted)">–</span>
+      </div>
     </div>
     <div id="set-alert" class="alert alert-ok"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -897,8 +1002,8 @@ async function init() {
   if (!logged) { show('login-page'); return; }
   show('dashboard-page');
   updateCostDisplay();
-  // Inicializa Google (pode não estar pronto ainda — GIS carrega async)
-  setTimeout(() => { gauth.init(); updateGoogleStatus(); }, 1500);
+  // Inicializa Google (GIS carrega async — aguarda 1.5s)
+  setTimeout(() => { gauth.init(); gauth2.init(); updateGoogleStatus(); }, 1500);
   loadAll();
 }
 
@@ -1520,19 +1625,19 @@ async function saveSettings() {
   const evoUrl    = document.getElementById('s-evo-url')?.value.trim().replace(/\/$/,'')||'';
   const evoKey    = document.getElementById('s-evo-key')?.value.trim()||'';
   const evoInst   = document.getElementById('s-evo-inst')?.value.trim()||'angela';
-  const openaiKey = document.getElementById('s-openai-key')?.value.trim()||'';
-  const googleCid = document.getElementById('s-google-cid')?.value.trim()||'';
+  const openaiKey  = document.getElementById('s-openai-key')?.value.trim()||'';
+  const googleCid  = document.getElementById('s-google-cid')?.value.trim()||'';
+  const googleCid2 = document.getElementById('s-google-cid2')?.value.trim()||'';
   const al=document.getElementById('set-alert');
   if (!url||!key){al.className='alert alert-err show'; al.textContent='URL e API Key do n8n obrigatórios.'; return;}
   ls.s('n8n_url',url); ls.s('n8n_key',key);
-  if (evoUrl)    ls.s('evo_url',evoUrl);
-  if (evoKey)    ls.s('evo_key',evoKey);
-  if (evoInst)   ls.s('evo_inst',evoInst);
-  if (openaiKey) ls.s('openai_key',openaiKey);
-  if (googleCid) ls.s('google_client_id',googleCid);
+  if (evoUrl)     ls.s('evo_url',evoUrl);
+  if (evoKey)     ls.s('evo_key',evoKey);
+  if (evoInst)    ls.s('evo_inst',evoInst);
+  if (openaiKey)  ls.s('openai_key',openaiKey);
+  if (googleCid)  { ls.s('google_client_id',googleCid);   gauth._client=null;  gauth.init();  }
+  if (googleCid2) { ls.s('google_client_id_2',googleCid2); gauth2._client=null; gauth2.init(); }
   if (pwd&&pwd.length>=4) ls.s('n8n_hash',await hash(pwd));
-  // Re-inicializa Google client se Client ID mudou
-  if (googleCid) { gauth._client = null; gauth.init(); }
   al.className='alert alert-ok show'; al.textContent='✓ Configurações salvas!';
   setTimeout(()=>{ closeById('set-modal'); loadAll(); },1000);
 }
@@ -1546,6 +1651,7 @@ function openSettings() {
   document.getElementById('s-evo-inst').value=ls.g('evo_inst')||'angela';
   document.getElementById('s-openai-key').value=ls.g('openai_key')||'';
   document.getElementById('s-google-cid').value=ls.g('google_client_id')||'';
+  document.getElementById('s-google-cid2').value=ls.g('google_client_id_2')||'';
   document.getElementById('set-alert').classList.remove('show');
   updateGoogleStatus();
   document.getElementById('set-modal').classList.add('show');
@@ -1570,119 +1676,192 @@ function toast(msg,type='in'){
 }
 
 /* ══════════════════════════════════════════
-   GOOGLE OAUTH2 (Calendar + Sheets)
+   GOOGLE OAUTH2 — multi-conta (Calendar + Sheets)
 ══════════════════════════════════════════ */
-const gauth = {
-  _token: null,
-  _client: null,
+let _googleCallCount = 0;
 
-  get token() {
-    if (!this._token) this._token = sessionStorage.getItem('g_token') || null;
-    return this._token;
-  },
-  set token(v) {
-    this._token = v;
-    if (v) sessionStorage.setItem('g_token', v);
-    else sessionStorage.removeItem('g_token');
-    updateGoogleStatus();
-  },
+function makeGauth(slot) {
+  const tokenKey = `g_token_${slot}`;
+  const cidKey   = slot === 1 ? 'google_client_id' : `google_client_id_${slot}`;
+  const statusId = slot === 1 ? 'google-status' : `google-status${slot}`;
 
-  init() {
-    const cid = ls.g('google_client_id');
-    if (!cid) return false;
-    if (!window.google?.accounts?.oauth2) return false;
-    this._client = google.accounts.oauth2.initTokenClient({
-      client_id: cid,
-      scope: [
-        'https://www.googleapis.com/auth/calendar.readonly',
-        'https://www.googleapis.com/auth/spreadsheets',
-      ].join(' '),
-      callback: (resp) => {
-        if (resp.access_token) {
-          this.token = resp.access_token;
-          toast('✓ Google conectado!', 'ok');
-          loadCalendarEvents();
-        } else {
-          toast('Falha ao conectar Google', 'er');
+  return {
+    _token: null,
+    _client: null,
+    slot,
+
+    get token() {
+      if (!this._token) this._token = sessionStorage.getItem(tokenKey) || null;
+      return this._token;
+    },
+    set token(v) {
+      this._token = v;
+      if (v) sessionStorage.setItem(tokenKey, v);
+      else   sessionStorage.removeItem(tokenKey);
+      this._updateStatus();
+    },
+
+    _updateStatus() {
+      const el = document.getElementById(statusId);
+      if (!el) return;
+      if (this.token) { el.textContent = '✓ Conectada'; el.style.color = 'var(--green)'; }
+      else            { el.textContent = '– Desconectada'; el.style.color = 'var(--muted)'; }
+    },
+
+    init() {
+      const cid = ls.g(cidKey);
+      if (!cid || !window.google?.accounts?.oauth2) return false;
+      this._client = google.accounts.oauth2.initTokenClient({
+        client_id: cid,
+        scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/spreadsheets',
+        callback: (resp) => {
+          if (resp.access_token) {
+            this.token = resp.access_token;
+            toast(`✓ Google Conta ${slot} conectada!`, 'ok');
+            loadCalendarEvents();
+          } else {
+            toast(`Falha ao conectar Google Conta ${slot}`, 'er');
+          }
         }
+      });
+      return true;
+    },
+
+    connect() {
+      const cid = ls.g(cidKey);
+      if (!cid) { toast(`Configure o Google Client ID (Conta ${slot}) nas ⚙ configurações`, 'er'); openSettings(); return; }
+      if (!window.google?.accounts?.oauth2) { toast('Biblioteca Google ainda carregando, aguarde...', 'er'); return; }
+      if (!this._client) this.init();
+      this._client?.requestAccessToken();
+    },
+
+    async call(url, opts = {}) {
+      if (!this.token) return null;
+      _googleCallCount++;
+      const r = await fetch(url, {
+        ...opts,
+        headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+      });
+      if (r.status === 401) {
+        this.token = null;
+        toast(`Sessão Google Conta ${slot} expirou — reconecte nas configurações`, 'er');
+        return null;
       }
-    });
-    return true;
-  },
-
-  connect() {
-    const cid = ls.g('google_client_id');
-    if (!cid) { toast('Configure o Google Client ID nas ⚙ configurações', 'er'); return; }
-    if (!window.google?.accounts?.oauth2) { toast('Biblioteca Google ainda carregando, aguarde...', 'er'); return; }
-    if (!this._client) this.init();
-    this._client?.requestAccessToken();
-  },
-
-  async call(url, opts = {}) {
-    if (!this.token) { toast('Conecte o Google primeiro (⚙ Configurações)', 'er'); return null; }
-    const r = await fetch(url, {
-      ...opts,
-      headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
-    });
-    if (r.status === 401) {
-      this.token = null;
-      toast('Sessão Google expirou — reconecte nas configurações', 'er');
-      return null;
+      return r.json();
     }
-    return r.json();
-  }
-};
+  };
+}
+
+const gauth  = makeGauth(1);
+const gauth2 = makeGauth(2);
 
 function updateGoogleStatus() {
-  const el = document.getElementById('google-status');
-  const btn = document.getElementById('google-connect-btn');
-  if (!el) return;
-  if (gauth.token) {
-    el.textContent = '✓ Conectado';
-    el.style.color = 'var(--green)';
-    if (btn) { btn.innerHTML = btn.innerHTML.replace('Conectar Google', 'Reconectar Google'); }
-  } else {
-    el.textContent = '– Não conectado';
-    el.style.color = 'var(--muted)';
-  }
+  gauth._updateStatus();
+  gauth2._updateStatus();
 }
 
-function googleConnect() {
-  gauth.connect();
-}
+function googleConnect() { gauth.connect(); }
 
-/* ── Google Calendar ── */
+/* ── Google Calendar — carrega de todas as contas conectadas ── */
 async function loadCalendarEvents() {
   const el = document.getElementById('cal-events');
   if (!el) return;
-  if (!gauth.token) {
-    el.innerHTML = '<div style="color:var(--muted)">Conecte o Google nas ⚙ configurações</div>';
+
+  const connected = [gauth, gauth2].filter(g => g.token);
+  if (!connected.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.78rem">Conecte o Google nas ⚙ configurações</div>';
     return;
   }
+
   el.innerHTML = '<div class="spin" style="margin:10px auto"></div>';
   const now = new Date().toISOString();
   const end = new Date(Date.now() + 7 * 86400000).toISOString();
-  const data = await gauth.call(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=8`
-  );
-  if (!data) return;
-  const items = data.items || [];
-  if (!items.length) {
-    el.innerHTML = '<div style="color:var(--muted)">Nenhum evento nos próximos 7 dias</div>';
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=10`;
+
+  // Busca em paralelo para cada conta conectada
+  const results = await Promise.all(connected.map(g => g.call(url).catch(() => null)));
+  let allItems = [];
+  results.forEach((data, idx) => {
+    if (!data?.items) return;
+    data.items.forEach(ev => { ev._account = idx + 1; allItems.push(ev); });
+  });
+
+  // Ordenar por data
+  allItems.sort((a, b) => {
+    const da = new Date(a.start?.dateTime || a.start?.date);
+    const db = new Date(b.start?.dateTime || b.start?.date);
+    return da - db;
+  });
+  allItems = allItems.slice(0, 12);
+
+  if (!allItems.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:.78rem">Nenhum evento nos próximos 7 dias</div>';
     return;
   }
-  el.innerHTML = items.map(ev => {
-    const dt = ev.start?.dateTime || ev.start?.date;
-    const d = new Date(dt);
+
+  el.innerHTML = allItems.map(ev => {
+    const dt  = ev.start?.dateTime || ev.start?.date;
+    const d   = new Date(dt);
     const fmt = ev.start?.dateTime
-      ? d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-    const meet = ev.hangoutLink ? `<a href="${ev.hangoutLink}" target="_blank" style="color:var(--teal);font-size:.7rem;margin-left:4px">📹</a>` : '';
-    return `<div style="padding:7px 0;border-bottom:1px solid var(--border2);line-height:1.4">
-      <div style="font-size:.77rem;font-weight:600">${ev.summary || 'Sem título'}${meet}</div>
+      ? d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+      : d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short'});
+    const meet = ev.hangoutLink ? `<a href="${ev.hangoutLink}" target="_blank" title="Entrar no Meet" style="color:var(--teal);margin-left:6px" onclick="event.stopPropagation()">📹</a>` : '';
+    const acct = connected.length > 1 ? `<span style="font-size:.65rem;background:var(--teal-dim);color:var(--teal);border-radius:4px;padding:1px 5px;margin-left:5px">C${ev._account}</span>` : '';
+    const cal  = ev.htmlLink ? `<a href="${ev.htmlLink}" target="_blank" title="Abrir no Google Calendar" style="color:var(--muted);margin-left:4px;font-size:.75rem" onclick="event.stopPropagation()">↗</a>` : '';
+    return `<div onclick="openCalEvent(${JSON.stringify(JSON.stringify(ev))})"
+               style="padding:8px 6px;border-bottom:1px solid var(--border2);line-height:1.4;cursor:pointer;border-radius:6px;transition:background .15s"
+               onmouseover="this.style.background='var(--teal-dim)'" onmouseout="this.style.background=''">
+      <div style="font-size:.77rem;font-weight:600">${ev.summary || 'Sem título'}${meet}${cal}${acct}</div>
       <div style="font-size:.71rem;color:var(--muted)">${fmt}</div>
     </div>`;
   }).join('');
+}
+
+/* ── Abrir detalhes do evento ── */
+function openCalEvent(evJson) {
+  const ev = JSON.parse(evJson);
+
+  document.getElementById('cev-title').textContent = ev.summary || 'Sem título';
+
+  const dt  = ev.start?.dateTime || ev.start?.date;
+  const dtE = ev.end?.dateTime   || ev.end?.date;
+  const dS  = new Date(dt);
+  const dE  = new Date(dtE);
+  const fmtS = ev.start?.dateTime
+    ? dS.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'}) + ' às ' + dS.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+    : dS.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+  const fmtE = ev.end?.dateTime
+    ? dE.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+    : dE.toLocaleDateString('pt-BR', {day:'2-digit', month:'long'});
+
+  const attendees = (ev.attendees || [])
+    .map(a => `<span style="background:var(--bg2);padding:2px 8px;border-radius:99px;font-size:.71rem;margin:2px;display:inline-block">${a.displayName || a.email}${a.responseStatus === 'accepted' ? ' ✓' : ''}</span>`)
+    .join('');
+
+  let html = `
+    <div style="margin-bottom:12px;padding:10px;background:var(--bg2);border-radius:8px">
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📅 Data e hora</div>
+      <div style="font-size:.84rem;font-weight:600">${fmtS}</div>
+      ${ev.start?.dateTime ? `<div style="font-size:.78rem;color:var(--muted)">Término: ${fmtE}</div>` : ''}
+    </div>
+    ${ev.location ? `<div style="margin-bottom:10px"><span style="font-size:.72rem;color:var(--muted)">📍 Local: </span><span style="font-size:.82rem">${ev.location}</span></div>` : ''}
+    ${ev.description ? `<div style="margin-bottom:10px"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📝 Descrição</div><div style="font-size:.82rem;line-height:1.6;white-space:pre-wrap">${ev.description.replace(/<[^>]+>/g,'')}</div></div>` : ''}
+    ${attendees ? `<div style="margin-bottom:10px"><div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">👥 Participantes (${(ev.attendees||[]).length})</div><div>${attendees}</div></div>` : ''}
+    ${ev.organizer ? `<div style="font-size:.76rem;color:var(--muted)">Organizado por: ${ev.organizer.displayName || ev.organizer.email}</div>` : ''}
+  `;
+
+  document.getElementById('cev-body').innerHTML = html;
+
+  const gcalLink = document.getElementById('cev-gcal-link');
+  gcalLink.href = ev.htmlLink || '#';
+  if (!ev.htmlLink) gcalLink.style.display = 'none';
+  else gcalLink.style.display = '';
+
+  const meetLink = document.getElementById('cev-meet-link');
+  if (ev.hangoutLink) { meetLink.href = ev.hangoutLink; meetLink.style.display = ''; }
+  else meetLink.style.display = 'none';
+
+  document.getElementById('cal-event-modal').classList.add('show');
 }
 
 /* ── Google Sheets Export ── */
@@ -1734,8 +1913,10 @@ const openai = {
     // GPT-4o mini pricing: input $0.15/1M, output $0.60/1M
     const cost = (usage.prompt_tokens || 0) / 1_000_000 * 0.15
                + (usage.completion_tokens || 0) / 1_000_000 * 0.60;
-    const prev = parseFloat(ls.g('openai_cost') || '0');
-    ls.s('openai_cost', (prev + cost).toFixed(6));
+    const prevCost   = parseFloat(ls.g('openai_cost')   || '0');
+    const prevTokens = parseInt(ls.g('openai_tokens') || '0');
+    ls.s('openai_cost',   (prevCost + cost).toFixed(6));
+    ls.s('openai_tokens', prevTokens + (usage.total_tokens || 0));
     updateCostDisplay();
   },
 
@@ -1761,14 +1942,32 @@ function updateCostDisplay() {
   const el = document.getElementById('st-cost');
   if (!el) return;
   const val = parseFloat(ls.g('openai_cost') || '0');
-  el.textContent = val < 0.01 ? `$${(val * 100).toFixed(4)}¢` : `$${val.toFixed(4)}`;
+  el.textContent = val === 0 ? '$0.0000' : val < 0.001 ? `$${(val*1000).toFixed(3)}m` : `$${val.toFixed(4)}`;
 }
 
 function resetCost() {
-  if (!confirm('Resetar o contador de custo IA?')) return;
-  ls.s('openai_cost', '0');
+  if (!confirm('Resetar o contador de custo OpenAI neste painel?')) return;
+  ls.s('openai_cost','0');
+  ls.s('openai_tokens','0');
   updateCostDisplay();
   toast('Contador resetado', 'ok');
+  // atualiza modal se estiver aberto
+  const el = document.getElementById('au-panel-cost');
+  if (el) { el.textContent = '$0.0000'; document.getElementById('au-panel-tokens').textContent = '0'; }
+}
+
+function openApiUsage() {
+  // Atualiza valores no modal
+  const cost   = parseFloat(ls.g('openai_cost') || '0');
+  const tokens = parseInt(ls.g('openai_tokens') || '0');
+  document.getElementById('au-panel-cost').textContent    = cost === 0 ? '$0.0000' : `$${cost.toFixed(6)}`;
+  document.getElementById('au-panel-tokens').textContent  = tokens.toLocaleString('pt-BR');
+  document.getElementById('au-g-calls').textContent       = _googleCallCount;
+  const g1el = document.getElementById('au-g1-status');
+  const g2el = document.getElementById('au-g2-status');
+  if (g1el) { g1el.textContent = gauth.token  ? '✓ Conectada' : '– Offline'; g1el.style.color = gauth.token  ? 'var(--green)' : 'var(--muted)'; }
+  if (g2el) { g2el.textContent = gauth2.token ? '✓ Conectada' : '– Offline'; g2el.style.color = gauth2.token ? 'var(--green)' : 'var(--muted)'; }
+  document.getElementById('api-usage-modal').classList.add('show');
 }
 
 init();
