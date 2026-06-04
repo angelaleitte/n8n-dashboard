@@ -1463,7 +1463,7 @@ async function openChat(convId, name, phone) {
   document.getElementById(`conv-${phone}`)?.classList.add('active');
   // Mostra painel
   document.getElementById('chat-empty').style.display='none';
-  const ca = document.getElementById('chat-active'); ca.style.display='flex';
+  const caPanel = document.getElementById('chat-active'); caPanel.style.display='flex';
   document.getElementById('chat-name').textContent = name;
   document.getElementById('chat-sub').textContent  = `+${phone}`;
   // Avatar do cabeçalho com cor do contato
