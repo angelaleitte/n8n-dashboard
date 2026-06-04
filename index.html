@@ -1087,7 +1087,7 @@ async function loadConversations() {
   const list = document.getElementById('conv-list');
   list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px"><div class="spin teal"></div> Carregando...</div>`;
   try {
-    const data = await evo.call(`/chat/findChats/${evo.inst()}`, { method:'POST', body: JSON.stringify({}) });
+    const data = await evo.call(`/chat/findChats/${evo.inst()}`);
     allConvs = Array.isArray(data) ? data : (data.chats || data.data || []);
     // Ordena por última mensagem
     allConvs.sort((a,b)=> (b.updatedAt||b.lastMsgTimestamp||0) - (a.updatedAt||a.lastMsgTimestamp||0));
@@ -1167,9 +1167,9 @@ async function loadChatMessages(chat) {
   try {
     const data = await evo.call(`/chat/findMessages/${evo.inst()}`, {
       method:'POST',
-      body: JSON.stringify({ where:{ key:{ remoteJid: chat.id } }, limit:50 })
+      body: JSON.stringify({ where:{ key:{ remoteJid: chat.id } }, limit:50, orderBy:[{column:'messageTimestamp',dir:'asc'}] })
     });
-    const list = data.messages?.records || data.records || data || [];
+    const list = (data.messages?.records || data.records || data || []).filter(m=>m.message);
     if (!list.length) { msgs.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted)">Nenhuma mensagem</div>`; return; }
     msgs.innerHTML = list.map(m=>{
       const fromMe = m.key?.fromMe || m.fromMe;
