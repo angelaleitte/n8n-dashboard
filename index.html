@@ -398,8 +398,34 @@
     /* Skeleton */
     .skeleton { border-radius:4px; background:linear-gradient(90deg,var(--surface) 25%,var(--card) 50%,var(--surface) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
 
+    /* ── Prospecção form ── */
+    .prosp-form { background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:14px; margin-bottom:14px; }
+    .prosp-form-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:10px; }
+    .prosp-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+    .prosp-fields .full { grid-column:1/-1; }
+    .prosp-input { width:100%; padding:8px 10px; background:var(--surface); border:1px solid var(--border2); border-radius:6px; color:var(--text); font-size:.78rem; font-family:inherit; outline:none; transition:border-color .2s; }
+    .prosp-input:focus { border-color:var(--teal); }
+    .prosp-input::placeholder { color:var(--muted); }
+
+    /* ── Contacts table ── */
+    .contacts-table-wrap { overflow-x:auto; margin-top:4px; }
+    .contacts-table { width:100%; border-collapse:collapse; font-size:.74rem; }
+    .contacts-table th { background:var(--surface); color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:8px 10px; text-align:left; border-bottom:1px solid var(--border2); white-space:nowrap; position:sticky; top:0; }
+    .contacts-table td { padding:8px 10px; border-bottom:1px solid var(--border2); color:var(--text); vertical-align:middle; }
+    .contacts-table tr:last-child td { border-bottom:none; }
+    .contacts-table tr:hover td { background:var(--bg2); }
+    .contact-link { color:var(--teal); text-decoration:none; font-size:.7rem; }
+    .contact-link:hover { text-decoration:underline; }
+    .rating-pill { display:inline-flex; align-items:center; gap:3px; background:rgba(212,168,0,.1); color:var(--teal); border-radius:99px; padding:2px 7px; font-size:.7rem; font-weight:600; }
+    .contacts-search { width:100%; padding:8px 12px; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); font-size:.82rem; font-family:inherit; outline:none; margin-bottom:12px; }
+    .contacts-search:focus { border-color:var(--teal); }
+    .contacts-stats { display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .cstat { font-size:.75rem; color:var(--muted); }
+    .cstat strong { color:var(--text); }
+    .export-bar { display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px; }
+
     /* Responsive */
-    @media(max-width:520px){ .main{padding:14px;} .topbar{padding:0 14px;} .wf-grid{grid-template-columns:1fr;} }
+    @media(max-width:520px){ .main{padding:14px;} .topbar{padding:0 14px;} .wf-grid{grid-template-columns:1fr;} .prosp-fields{grid-template-columns:1fr;} }
   </style>
 </head>
 <body>
@@ -582,6 +608,26 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     MODAL — Contatos Prospecção
+══════════════════════════════════════ -->
+<div id="contacts-modal" class="overlay" onclick="closeOverlay(event,'contacts-modal')">
+  <div class="modal" style="max-width:900px;width:95vw">
+    <div class="modal-head">
+      <h3>🗺️ Contatos Capturados — Prospecção Google Maps</h3>
+      <button class="modal-x" onclick="closeById('contacts-modal')">✕</button>
+    </div>
+    <div class="contacts-stats" id="contacts-stats"></div>
+    <div class="export-bar">
+      <input class="contacts-search" id="contacts-search" placeholder="🔍 Buscar por nome, nicho, cidade..." oninput="filterContacts()" style="margin-bottom:0;flex:1" />
+      <button class="btn btn-ghost" style="font-size:.74rem" onclick="exportCSV()">⬇ Exportar CSV</button>
+    </div>
+    <div class="contacts-table-wrap" id="contacts-body" style="max-height:55vh;overflow-y:auto">
+      <div style="padding:20px;text-align:center;color:var(--muted)">Carregando...</div>
+    </div>
+  </div>
+</div>
+
 <!-- Toasts -->
 <div id="toasts"></div>
 
@@ -591,9 +637,11 @@
 <script>
 /* ── Workflows configurados ── */
 const WFS = [
-  { id:'wWNQIzdKwpwcJS0f', emoji:'🤖', name:'Agente WhatsApp Maya',      desc:'Agente conversacional com IA — personalidade Maya, WhatsApp + Google Calendar.' },
-  { id:'8F0SpJpKvPVatbDq', emoji:'🗺️', name:'Prospecção Google Maps',    desc:'Busca empresas por nicho e cidade, extrai contatos e salva na Data Table.' }
+  { id:'wWNQIzdKwpwcJS0f', emoji:'🤖', name:'Agente WhatsApp Maya',   desc:'Agente conversacional com IA — personalidade Maya, WhatsApp + Google Calendar.', type:'maya' },
+  { id:'8F0SpJpKvPVatbDq', emoji:'🗺️', name:'Prospecção Google Maps', desc:'Busca empresas por nicho e cidade, extrai contatos e salva na Data Table.', type:'prospeccao' }
 ];
+const TABLE_ID = 'jeqmhAigbR7v2KgP'; // Data Table: Prospeccao Google Maps
+let allContacts = []; // cache local de contatos
 
 /* ── Storage ── */
 const ls = { g: k=>localStorage.getItem(k), s:(k,v)=>localStorage.setItem(k,v) };
@@ -757,12 +805,27 @@ async function buildCard(w) {
       <div class="exec-header">Últimas execuções</div>
       <div class="exec-list">${execHtml}</div>
     </div>
+    ${w.type==='prospeccao' ? `
+    <div class="prosp-form">
+      <div class="prosp-form-title">🔍 Nova Prospecção</div>
+      <div class="prosp-fields">
+        <div class="full">
+          <input class="prosp-input" id="prosp-nicho" placeholder="Tipo de negócio / Nicho *  Ex: clínica de estética, dentista" />
+        </div>
+        <input class="prosp-input" id="prosp-cidade" placeholder="Cidade e Estado *  Ex: Ribeirão Preto, SP" />
+        <input class="prosp-input" id="prosp-bairro" placeholder="Bairro (opcional)" />
+      </div>
+      <button class="btn btn-teal" id="prosp-run-btn" onclick="runProspeccao()" style="width:100%;justify-content:center">
+        🚀 Iniciar Prospecção
+      </button>
+    </div>` : ''}
     <div class="wf-actions">
       ${act
         ? `<button class="btn btn-red"   onclick="toggle('${w.id}',false)">⏸ Desativar</button>`
         : `<button class="btn btn-green" onclick="toggle('${w.id}',true)">▶ Ativar</button>`
       }
       <button class="btn btn-ghost" onclick="openExecs('${w.id}','${w.name}')">📋 Histórico</button>
+      ${w.type==='prospeccao' ? `<button class="btn btn-ghost" onclick="openContacts()">👥 Ver Contatos</button>` : ''}
       <a class="btn btn-teal" href="${base()}/workflow/${w.id}" target="_blank">↗ Abrir no n8n</a>
     </div>`;
   return div;
@@ -806,6 +869,111 @@ async function openExecs(id, name) {
       </div>`;
     }).join('');
   } catch(e) { body.innerHTML=`<p style="color:var(--red);padding:20px">Erro: ${e.message}</p>`; }
+}
+
+/* ── Rodar Prospecção ── */
+async function runProspeccao() {
+  const nicho  = document.getElementById('prosp-nicho')?.value.trim();
+  const cidade = document.getElementById('prosp-cidade')?.value.trim();
+  const bairro = document.getElementById('prosp-bairro')?.value.trim() || '';
+  if (!nicho || !cidade) { toast('Preencha Nicho e Cidade!','er'); return; }
+  const btn = document.getElementById('prosp-run-btn');
+  if (btn) { btn.disabled=true; btn.innerHTML=`<div class="spin"></div> Prospectando...`; }
+  try {
+    await api(`/api/v1/workflows/8F0SpJpKvPVatbDq/execute`, {
+      method: 'POST',
+      body: JSON.stringify({ inputs: { formData: [{ nicho, cidade, bairro }] } })
+    });
+    toast(`✓ Prospecção iniciada! Nicho: ${nicho} em ${cidade}`,'ok');
+    if (btn) { btn.disabled=false; btn.innerHTML='🚀 Iniciar Prospecção'; }
+    // Aguarda 3s e recarrega contatos
+    setTimeout(()=>{ if(document.getElementById('contacts-modal').classList.contains('show')) loadContacts(); }, 3000);
+  } catch(e) {
+    toast(`Erro ao iniciar: ${e.message}`,'er');
+    if (btn) { btn.disabled=false; btn.innerHTML='🚀 Iniciar Prospecção'; }
+  }
+}
+
+/* ── Contatos modal ── */
+async function openContacts() {
+  document.getElementById('contacts-modal').classList.add('show');
+  await loadContacts();
+}
+
+async function loadContacts() {
+  const body = document.getElementById('contacts-body');
+  body.innerHTML=`<div style="padding:30px;text-align:center;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:10px"><div class="spin teal"></div> Carregando contatos...</div>`;
+  try {
+    const d = await api(`/api/v1/data-store/table/${TABLE_ID}/row?limit=500`);
+    allContacts = d.data || d || [];
+    renderContacts(allContacts);
+  } catch(e) {
+    body.innerHTML=`<p style="color:var(--red);padding:20px">Erro: ${e.message}</p>`;
+  }
+}
+
+function renderContacts(list) {
+  const body  = document.getElementById('contacts-body');
+  const stats = document.getElementById('contacts-stats');
+  const total  = list.length;
+  const comSite = list.filter(c=>c.website&&c.website!=='Não informado').length;
+  const comTel  = list.filter(c=>c.telefone&&c.telefone!=='Não informado').length;
+  const comIG   = list.filter(c=>c.instagram).length;
+
+  stats.innerHTML=`
+    <div class="cstat">Total: <strong>${total}</strong></div>
+    <div class="cstat">Com site: <strong>${comSite}</strong></div>
+    <div class="cstat">Com telefone: <strong>${comTel}</strong></div>
+    <div class="cstat">Com Instagram: <strong>${comIG}</strong></div>`;
+
+  if (!list.length) {
+    body.innerHTML=`<p style="color:var(--muted);text-align:center;padding:30px">Nenhum contato encontrado. Rode uma prospecção primeiro!</p>`;
+    return;
+  }
+
+  body.innerHTML=`<table class="contacts-table">
+    <thead><tr>
+      <th>Nome</th><th>Telefone</th><th>Nicho</th><th>Cidade</th><th>Avaliação</th><th>Site</th><th>Redes Sociais</th>
+    </tr></thead>
+    <tbody>
+    ${list.map(c=>`<tr>
+      <td><strong>${c.nome||'–'}</strong><br><span style="font-size:.68rem;color:var(--muted)">${c.endereco?.slice(0,40)||''}</span></td>
+      <td>${c.telefone&&c.telefone!=='Não informado'?`<a class="contact-link" href="tel:${c.telefone}">${c.telefone}</a>`:'–'}</td>
+      <td>${c.nicho||'–'}</td>
+      <td>${c.cidade||'–'}${c.bairro?`<br><span style="font-size:.68rem;color:var(--muted)">${c.bairro}</span>`:''}</td>
+      <td>${c.avaliacao?`<span class="rating-pill">⭐ ${c.avaliacao} <span style="opacity:.6">(${c.total_avaliacoes||0})</span></span>`:'–'}</td>
+      <td>${c.website&&c.website!=='Não informado'?`<a class="contact-link" href="${c.website}" target="_blank">🌐 Site</a>`:'–'}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap">
+        ${c.instagram?`<a class="contact-link" href="${c.instagram}" target="_blank">📸 IG</a>`:''}
+        ${c.facebook?`<a class="contact-link" href="${c.facebook}" target="_blank">👤 FB</a>`:''}
+        ${c.whatsapp?`<a class="contact-link" href="${c.whatsapp}" target="_blank">💬 WA</a>`:''}
+        ${c.linkedin?`<a class="contact-link" href="${c.linkedin}" target="_blank">💼 LI</a>`:''}
+        ${!c.instagram&&!c.facebook&&!c.whatsapp&&!c.linkedin?'–':''}
+      </td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function filterContacts() {
+  const q = document.getElementById('contacts-search').value.toLowerCase();
+  if (!q) { renderContacts(allContacts); return; }
+  renderContacts(allContacts.filter(c=>
+    (c.nome||'').toLowerCase().includes(q) ||
+    (c.nicho||'').toLowerCase().includes(q) ||
+    (c.cidade||'').toLowerCase().includes(q) ||
+    (c.telefone||'').toLowerCase().includes(q) ||
+    (c.bairro||'').toLowerCase().includes(q)
+  ));
+}
+
+function exportCSV() {
+  const cols = ['nome','telefone','website','endereco','avaliacao','total_avaliacoes','status_negocio','nicho','cidade','bairro','facebook','instagram','whatsapp','linkedin'];
+  const rows = [cols.join(','), ...allContacts.map(c=>cols.map(k=>`"${(c[k]||'').toString().replace(/"/g,'""')}"`).join(','))];
+  const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`prospeccao-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  toast('✓ CSV exportado!','ok');
 }
 
 /* ── Settings modal ── */
