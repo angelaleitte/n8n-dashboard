@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     /* ─────────────────────────────────────
        TOKENS — Dark (padrão)
@@ -613,6 +614,10 @@
         <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value green" id="st-active">–</div></div>
         <div class="stat-card"><div class="stat-label">Inativos</div><div class="stat-value red" id="st-inactive">–</div></div>
         <div class="stat-card"><div class="stat-label">Execuções hoje</div><div class="stat-value yellow" id="st-execs">–</div></div>
+        <div class="stat-card" onclick="resetCost()" title="Clique para resetar" style="cursor:pointer">
+          <div class="stat-label">Custo IA (painel)</div>
+          <div class="stat-value" id="st-cost" style="color:var(--teal);font-size:1rem">$0.000</div>
+        </div>
       </div>
       <div class="section-label">workflows</div>
       <div class="wf-grid" id="wf-grid"></div>
@@ -693,6 +698,20 @@
         <div class="sidebar-section">
           <h4>Status do Bot</h4>
           <div id="bot-status-display" style="font-size:.8rem;color:var(--muted)">–</div>
+        </div>
+        <!-- Google Calendar widget -->
+        <div class="sidebar-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <h4>📅 Agenda</h4>
+            <button class="btn btn-ghost" style="font-size:.68rem;padding:3px 8px" onclick="loadCalendarEvents()">↻</button>
+          </div>
+          <div id="cal-events" style="font-size:.78rem">
+            <div style="color:var(--muted)">Conecte o Google nas ⚙ configurações</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:.72rem;width:100%;margin-top:10px;justify-content:center" onclick="googleConnect()">
+            <svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:4px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Conectar / Reconectar
+          </button>
         </div>
       </div>
 
@@ -779,6 +798,30 @@
       <label class="form-label">Nome da Instância</label>
       <input id="s-evo-inst" class="form-input" placeholder="angela" />
     </div>
+    <div class="divider"></div>
+    <p style="font-size:.78rem;font-weight:700;margin-bottom:12px">🤖 OpenAI (GPT)</p>
+    <div class="form-group">
+      <label class="form-label">OpenAI API Key</label>
+      <span class="form-hint">Usada para funcionalidades de IA direto no painel</span>
+      <div class="input-wrap">
+        <input id="s-openai-key" class="form-input" type="password" placeholder="sk-..." />
+        <button class="input-eye" onclick="eye('s-openai-key',this)">👁</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:.78rem;font-weight:700;margin-bottom:4px">📅 Google (Calendar · Sheets)</p>
+    <p style="font-size:.72rem;color:var(--muted);margin-bottom:12px">Precisa de um projeto no <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--teal)">Google Cloud Console</a> com OAuth 2.0 Web Client ID e o domínio do dashboard autorizado.</p>
+    <div class="form-group">
+      <label class="form-label">Google Client ID</label>
+      <input id="s-google-cid" class="form-input" placeholder="xxx.apps.googleusercontent.com" />
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button class="btn btn-ghost" id="google-connect-btn" onclick="googleConnect()" style="font-size:.78rem">
+        <svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:6px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Conectar Google
+      </button>
+      <span id="google-status" style="font-size:.75rem;color:var(--muted)">–</span>
+    </div>
     <div id="set-alert" class="alert alert-ok"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeById('set-modal')">Cancelar</button>
@@ -800,6 +843,7 @@
     <div class="export-bar">
       <input class="contacts-search" id="contacts-search" placeholder="🔍 Buscar por nome, nicho, cidade..." oninput="filterContacts()" style="margin-bottom:0;flex:1" />
       <button class="btn btn-ghost" style="font-size:.74rem" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="btn btn-ghost" style="font-size:.74rem" onclick="exportToSheets()">📊 Google Sheets</button>
     </div>
     <div class="contacts-table-wrap" id="contacts-body" style="max-height:55vh;overflow-y:auto">
       <div style="padding:20px;text-align:center;color:var(--muted)">Carregando...</div>
@@ -852,6 +896,9 @@ async function init() {
   if (!ok)     { show('setup-page'); return; }
   if (!logged) { show('login-page'); return; }
   show('dashboard-page');
+  updateCostDisplay();
+  // Inicializa Google (pode não estar pronto ainda — GIS carrega async)
+  setTimeout(() => { gauth.init(); updateGoogleStatus(); }, 1500);
   loadAll();
 }
 
@@ -1004,7 +1051,7 @@ async function buildCard(w) {
         : `<button class="btn btn-green" onclick="toggle('${w.id}',true)">▶ Ativar</button>`
       }
       <button class="btn btn-ghost" onclick="openExecs('${w.id}','${w.name}')">📋 Histórico</button>
-      ${w.type==='prospeccao' ? `<button class="btn btn-ghost" onclick="openContacts()">👥 Ver Contatos</button>` : ''}
+      ${w.type==='prospeccao' ? `<button class="btn btn-ghost" onclick="openContacts()">👥 Ver Contatos</button><button class="btn btn-ghost" onclick="exportToSheets()" title="Exportar para Google Sheets">📊 Sheets</button>` : ''}
       <a class="btn btn-teal" href="${base()}/workflow/${w.id}" target="_blank">↗ Abrir no n8n</a>
     </div>`;
   return div;
@@ -1470,16 +1517,22 @@ async function saveSettings() {
   const url=document.getElementById('s-url').value.trim().replace(/\/$/,'');
   const key=document.getElementById('s-key').value.trim();
   const pwd=document.getElementById('s-pwd').value;
-  const evoUrl  = document.getElementById('s-evo-url')?.value.trim().replace(/\/$/,'')||'';
-  const evoKey  = document.getElementById('s-evo-key')?.value.trim()||'';
-  const evoInst = document.getElementById('s-evo-inst')?.value.trim()||'angela';
+  const evoUrl    = document.getElementById('s-evo-url')?.value.trim().replace(/\/$/,'')||'';
+  const evoKey    = document.getElementById('s-evo-key')?.value.trim()||'';
+  const evoInst   = document.getElementById('s-evo-inst')?.value.trim()||'angela';
+  const openaiKey = document.getElementById('s-openai-key')?.value.trim()||'';
+  const googleCid = document.getElementById('s-google-cid')?.value.trim()||'';
   const al=document.getElementById('set-alert');
   if (!url||!key){al.className='alert alert-err show'; al.textContent='URL e API Key do n8n obrigatórios.'; return;}
   ls.s('n8n_url',url); ls.s('n8n_key',key);
-  if (evoUrl)  ls.s('evo_url',evoUrl);
-  if (evoKey)  ls.s('evo_key',evoKey);
-  if (evoInst) ls.s('evo_inst',evoInst);
+  if (evoUrl)    ls.s('evo_url',evoUrl);
+  if (evoKey)    ls.s('evo_key',evoKey);
+  if (evoInst)   ls.s('evo_inst',evoInst);
+  if (openaiKey) ls.s('openai_key',openaiKey);
+  if (googleCid) ls.s('google_client_id',googleCid);
   if (pwd&&pwd.length>=4) ls.s('n8n_hash',await hash(pwd));
+  // Re-inicializa Google client se Client ID mudou
+  if (googleCid) { gauth._client = null; gauth.init(); }
   al.className='alert alert-ok show'; al.textContent='✓ Configurações salvas!';
   setTimeout(()=>{ closeById('set-modal'); loadAll(); },1000);
 }
@@ -1491,7 +1544,10 @@ function openSettings() {
   document.getElementById('s-evo-url').value=ls.g('evo_url')||'';
   document.getElementById('s-evo-key').value=ls.g('evo_key')||'';
   document.getElementById('s-evo-inst').value=ls.g('evo_inst')||'angela';
+  document.getElementById('s-openai-key').value=ls.g('openai_key')||'';
+  document.getElementById('s-google-cid').value=ls.g('google_client_id')||'';
   document.getElementById('set-alert').classList.remove('show');
+  updateGoogleStatus();
   document.getElementById('set-modal').classList.add('show');
 }
 
@@ -1511,6 +1567,208 @@ function toast(msg,type='in'){
   const t=document.createElement('div'); t.className=`toast ${type}`;
   t.innerHTML=`<span>${icons[type]||'i'}</span><span style="flex:1">${msg}</span><button class="toast-x" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(t); setTimeout(()=>t.remove(),4000);
+}
+
+/* ══════════════════════════════════════════
+   GOOGLE OAUTH2 (Calendar + Sheets)
+══════════════════════════════════════════ */
+const gauth = {
+  _token: null,
+  _client: null,
+
+  get token() {
+    if (!this._token) this._token = sessionStorage.getItem('g_token') || null;
+    return this._token;
+  },
+  set token(v) {
+    this._token = v;
+    if (v) sessionStorage.setItem('g_token', v);
+    else sessionStorage.removeItem('g_token');
+    updateGoogleStatus();
+  },
+
+  init() {
+    const cid = ls.g('google_client_id');
+    if (!cid) return false;
+    if (!window.google?.accounts?.oauth2) return false;
+    this._client = google.accounts.oauth2.initTokenClient({
+      client_id: cid,
+      scope: [
+        'https://www.googleapis.com/auth/calendar.readonly',
+        'https://www.googleapis.com/auth/spreadsheets',
+      ].join(' '),
+      callback: (resp) => {
+        if (resp.access_token) {
+          this.token = resp.access_token;
+          toast('✓ Google conectado!', 'ok');
+          loadCalendarEvents();
+        } else {
+          toast('Falha ao conectar Google', 'er');
+        }
+      }
+    });
+    return true;
+  },
+
+  connect() {
+    const cid = ls.g('google_client_id');
+    if (!cid) { toast('Configure o Google Client ID nas ⚙ configurações', 'er'); return; }
+    if (!window.google?.accounts?.oauth2) { toast('Biblioteca Google ainda carregando, aguarde...', 'er'); return; }
+    if (!this._client) this.init();
+    this._client?.requestAccessToken();
+  },
+
+  async call(url, opts = {}) {
+    if (!this.token) { toast('Conecte o Google primeiro (⚙ Configurações)', 'er'); return null; }
+    const r = await fetch(url, {
+      ...opts,
+      headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+    });
+    if (r.status === 401) {
+      this.token = null;
+      toast('Sessão Google expirou — reconecte nas configurações', 'er');
+      return null;
+    }
+    return r.json();
+  }
+};
+
+function updateGoogleStatus() {
+  const el = document.getElementById('google-status');
+  const btn = document.getElementById('google-connect-btn');
+  if (!el) return;
+  if (gauth.token) {
+    el.textContent = '✓ Conectado';
+    el.style.color = 'var(--green)';
+    if (btn) { btn.innerHTML = btn.innerHTML.replace('Conectar Google', 'Reconectar Google'); }
+  } else {
+    el.textContent = '– Não conectado';
+    el.style.color = 'var(--muted)';
+  }
+}
+
+function googleConnect() {
+  gauth.connect();
+}
+
+/* ── Google Calendar ── */
+async function loadCalendarEvents() {
+  const el = document.getElementById('cal-events');
+  if (!el) return;
+  if (!gauth.token) {
+    el.innerHTML = '<div style="color:var(--muted)">Conecte o Google nas ⚙ configurações</div>';
+    return;
+  }
+  el.innerHTML = '<div class="spin" style="margin:10px auto"></div>';
+  const now = new Date().toISOString();
+  const end = new Date(Date.now() + 7 * 86400000).toISOString();
+  const data = await gauth.call(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&singleEvents=true&orderBy=startTime&maxResults=8`
+  );
+  if (!data) return;
+  const items = data.items || [];
+  if (!items.length) {
+    el.innerHTML = '<div style="color:var(--muted)">Nenhum evento nos próximos 7 dias</div>';
+    return;
+  }
+  el.innerHTML = items.map(ev => {
+    const dt = ev.start?.dateTime || ev.start?.date;
+    const d = new Date(dt);
+    const fmt = ev.start?.dateTime
+      ? d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    const meet = ev.hangoutLink ? `<a href="${ev.hangoutLink}" target="_blank" style="color:var(--teal);font-size:.7rem;margin-left:4px">📹</a>` : '';
+    return `<div style="padding:7px 0;border-bottom:1px solid var(--border2);line-height:1.4">
+      <div style="font-size:.77rem;font-weight:600">${ev.summary || 'Sem título'}${meet}</div>
+      <div style="font-size:.71rem;color:var(--muted)">${fmt}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Google Sheets Export ── */
+async function exportToSheets() {
+  if (!gauth.token) {
+    toast('Conecte o Google nas ⚙ configurações para exportar para Sheets', 'er');
+    openSettings();
+    return;
+  }
+  if (!allContacts || !allContacts.length) {
+    toast('Carregue os contatos primeiro (👥 Ver Contatos)', 'er');
+    return;
+  }
+  toast('Criando planilha no Google Sheets...', 'in');
+
+  // 1. Criar spreadsheet
+  const title = `Prospecção Angela Leitte — ${new Date().toLocaleDateString('pt-BR')}`;
+  const createResp = await gauth.call('https://sheets.googleapis.com/v4/spreadsheets', {
+    method: 'POST',
+    body: JSON.stringify({
+      properties: { title },
+      sheets: [{ properties: { title: 'Contatos' } }]
+    })
+  });
+  if (!createResp?.spreadsheetId) { toast('Erro ao criar planilha', 'er'); return; }
+
+  // 2. Preencher com dados
+  const cols = ['nome','telefone','website','endereco','avaliacao','total_avaliacoes','status_negocio','nicho','cidade','bairro','facebook','instagram','whatsapp','linkedin'];
+  const header = ['Nome','Telefone','Website','Endereço','Avaliação','Total Avaliações','Status','Nicho','Cidade','Bairro','Facebook','Instagram','WhatsApp','LinkedIn'];
+  const rows = [header, ...allContacts.map(c => cols.map(k => c[k] ?? ''))];
+
+  await gauth.call(
+    `https://sheets.googleapis.com/v4/spreadsheets/${createResp.spreadsheetId}/values/A1?valueInputOption=RAW`,
+    { method: 'PUT', body: JSON.stringify({ values: rows }) }
+  );
+
+  toast('✓ Planilha criada com sucesso!', 'ok');
+  setTimeout(() => window.open(createResp.spreadsheetUrl, '_blank'), 500);
+}
+
+/* ══════════════════════════════════════════
+   OPENAI — Custo / uso direto no painel
+══════════════════════════════════════════ */
+const openai = {
+  key: () => ls.g('openai_key') || '',
+
+  addCost(usage) {
+    if (!usage) return;
+    // GPT-4o mini pricing: input $0.15/1M, output $0.60/1M
+    const cost = (usage.prompt_tokens || 0) / 1_000_000 * 0.15
+               + (usage.completion_tokens || 0) / 1_000_000 * 0.60;
+    const prev = parseFloat(ls.g('openai_cost') || '0');
+    ls.s('openai_cost', (prev + cost).toFixed(6));
+    updateCostDisplay();
+  },
+
+  async chat(messages, model = 'gpt-4o-mini') {
+    const key = this.key();
+    if (!key) { toast('Configure a OpenAI API Key nas ⚙ configurações', 'er'); return null; }
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages, max_tokens: 800 })
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error?.message || `OpenAI HTTP ${r.status}`);
+    }
+    const data = await r.json();
+    this.addCost(data.usage);
+    return data.choices?.[0]?.message?.content || '';
+  }
+};
+
+function updateCostDisplay() {
+  const el = document.getElementById('st-cost');
+  if (!el) return;
+  const val = parseFloat(ls.g('openai_cost') || '0');
+  el.textContent = val < 0.01 ? `$${(val * 100).toFixed(4)}¢` : `$${val.toFixed(4)}`;
+}
+
+function resetCost() {
+  if (!confirm('Resetar o contador de custo IA?')) return;
+  ls.s('openai_cost', '0');
+  updateCostDisplay();
+  toast('Contador resetado', 'ok');
 }
 
 init();
