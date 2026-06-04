@@ -1087,9 +1087,17 @@ async function loadConversations() {
   const list = document.getElementById('conv-list');
   list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px"><div class="spin teal"></div> Carregando...</div>`;
   try {
-    const data = await evo.call(`/chat/findChats/${evo.inst()}`);
-    allConvs = Array.isArray(data) ? data : (data.chats || data.data || []);
-    // Ordena por última mensagem
+    // Evolution API v2 — tenta endpoints em sequência
+    let data = null;
+    const endpoints = [
+      `/chat/findChats/${evo.inst()}`,
+      `/chat/${evo.inst()}/findChats`,
+      `/chat/findContacts/${evo.inst()}`,
+    ];
+    for (const ep of endpoints) {
+      try { data = await evo.call(ep); if (data) break; } catch {}
+    }
+    allConvs = Array.isArray(data) ? data : (data?.chats || data?.data || data?.contacts || []);
     allConvs.sort((a,b)=> (b.updatedAt||b.lastMsgTimestamp||0) - (a.updatedAt||a.lastMsgTimestamp||0));
     renderConvList(allConvs);
   } catch(e) {
