@@ -1955,26 +1955,31 @@ async function returnBot() {
 // Tenta webhook n8n dedicado; fallback: envia #humano/#bot para o próprio número de Angela
 // (fromMe=true, dispara o n8n sem aparecer para o cliente).
 async function setBotMode(phone, botActive) {
-  const cmd = botActive ? '#bot' : '#humano';
   const n8nUrl = ls.g('n8n_url') || '';
 
-  // Opção 1: webhook dedicado no n8n (mais limpo, sem mensagem visível)
+  // Webhook dedicado: envia #humano/#bot via Evolution e apaga a mensagem logo depois
+  // O cliente não vê nada, mas o n8n recebe fromMe=true e atualiza o staticData
   if (n8nUrl) {
     try {
       const r = await fetch(`${n8nUrl}/webhook/bot-control`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, botActive, cmd })
+        body: JSON.stringify({
+          phone,
+          botActive,
+          evoUrl:  evo.base(),
+          evoKey:  evo.key(),
+          evoInst: evo.inst()
+        })
       });
-      if (r.ok) return; // sucesso
+      if (r.ok) return;
     } catch { /* fallback abaixo */ }
   }
 
-  // Opção 2: envia para o próprio número de Angela (fromMe=true no webhook do n8n)
-  // O n8n detecta fromMe=true + texto #humano/#bot e atualiza o estado
+  // Fallback: envia direto (mensagem pode ficar visível brevemente)
   await evo.call(`/message/sendText/${evo.inst()}`, {
     method: 'POST',
-    body: JSON.stringify({ number: phone, text: cmd })
+    body: JSON.stringify({ number: phone, text: botActive ? '#bot' : '#humano' })
   });
 }
 
