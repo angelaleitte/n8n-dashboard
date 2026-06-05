@@ -693,7 +693,7 @@
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button class="btn btn-green" id="btn-takeover" onclick="takeover()" style="font-size:.74rem">👤 Assumir</button>
-              <button class="btn btn-ghost"  id="btn-returnbot" onclick="returnBot()" style="font-size:.74rem;display:none">🤖 Dev. ao Bot</button>
+              <button class="btn btn-teal"  id="btn-returnbot" onclick="returnBot()" style="font-size:.74rem;display:none">🤖 Dev. ao Bot</button>
               <button class="btn btn-ghost"  onclick="loadChatMessages(currentChat)" style="font-size:.74rem">↻</button>
             </div>
           </div>
@@ -1906,9 +1906,28 @@ async function sendMediaFile(input) {
 /* ══════════════════════════════════════
    TAKEOVER / BOT CONTROL
 ══════════════════════════════════════ */
+// Persiste modo humano no localStorage para sobreviver a reloads
+function saveBotMode(phone, isHuman) {
+  try {
+    const modes = JSON.parse(ls.g('bot_modes') || '{}');
+    if (isHuman) modes[phone] = 'human';
+    else delete modes[phone];
+    ls.s('bot_modes', JSON.stringify(modes));
+  } catch {}
+}
+function loadBotMode(phone) {
+  try {
+    const modes = JSON.parse(ls.g('bot_modes') || '{}');
+    return modes[phone] === 'human';
+  } catch { return false; }
+}
+
 function checkBotStatus(phone) {
-  const conv = allConvs.find(c=>(c.id||c.remoteJid||'').includes(phone));
-  const isHuman = conv?._humanMode || false;
+  // Prioridade: estado salvo no localStorage (persiste entre reloads)
+  const conv = allConvs.find(c=>(c.remoteJid||c.id||'').includes(phone));
+  const isHuman = loadBotMode(phone) || conv?._humanMode || false;
+  // Sincroniza o objeto da conversa
+  if (conv) conv._humanMode = isHuman;
   updateTakeoverButtons(isHuman);
   const disp = document.getElementById('bot-status-display');
   if (disp) disp.innerHTML = isHuman
@@ -1930,6 +1949,7 @@ async function takeover() {
     await setBotMode(currentChat.phone, false);
     const conv = allConvs.find(c=>(c.remoteJid||c.id||'').includes(currentChat.phone));
     if (conv) conv._humanMode = true;
+    saveBotMode(currentChat.phone, true);
     updateTakeoverButtons(true);
     checkBotStatus(currentChat.phone);
     renderConvList(allConvs);
@@ -1944,6 +1964,7 @@ async function returnBot() {
     await setBotMode(currentChat.phone, true);
     const conv = allConvs.find(c=>(c.remoteJid||c.id||'').includes(currentChat.phone));
     if (conv) conv._humanMode = false;
+    saveBotMode(currentChat.phone, false);
     updateTakeoverButtons(false);
     checkBotStatus(currentChat.phone);
     renderConvList(allConvs);
