@@ -699,9 +699,7 @@
           </div>
           <div class="chat-messages" id="chat-messages"></div>
           <!-- Emoji picker popup -->
-          <div id="emoji-picker" style="display:none;position:absolute;bottom:70px;left:16px;z-index:200;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;box-shadow:var(--shadow);width:280px;max-height:200px;overflow-y:auto;line-height:1.8;font-size:1.3rem;flex-wrap:wrap;display:none">
-            😀😁😂🤣😃😄😅😆😉😊😋😎😍🥰😘😗😙😚🙂🤗🤩🤔🤨😐😑😶🙄😏😣😥😮🤐😯😪😫🥱😴😌😛😜😝🤤😒😓🤑🥳😤😠😡🤬😈👿💀🤯🤧🥴😷🤒🤕💩🤡👹👺👻👽👾🤖😺😸😹😻😼😽🙈🙉🙊👋🤚✋🖐👌✌🤞🤟🤘🤙👈👉👆🖕👇☝👍👎✊👊🤛🤜👏🙌🤲🤝🙏✍💅🤳💪🦾🦿🦵🦶👂🦻👃🫀🫁🧠👀❤🧡💛💚💙💜🖤🤍🤎💔❣💕💞💓💗💖💘💝💟☮✝☯✡🔯🕎☸☦🛐⛎♈♉♊♋♌♍♎♏♐♑♒♓🆔⚜🔰♻✅❎🚫
-          </div>
+          <div id="emoji-picker" style="display:none;position:absolute;bottom:70px;left:16px;z-index:200;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;box-shadow:var(--shadow);width:282px;max-height:210px;overflow-y:auto;display:none"></div>
           <div class="chat-input-area" style="position:relative">
             <input type="file" id="media-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" style="display:none" onchange="sendMediaFile(this)" />
             <button class="btn btn-ghost" title="Enviar arquivo" onclick="document.getElementById('media-file-input').click()" style="padding:8px 10px;font-size:1.1rem;flex-shrink:0">📎</button>
@@ -1821,28 +1819,43 @@ async function loadMedia(mid, type, filename) {
 }
 
 /* ── Emoji picker ── */
+const EMOJIS = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😗','🙂','🤗','🤩','🤔','🙄','😏','😮','😴','😛','😜','😝','🤑','🥳','😤','😠','😡','🤬','😈','💩','🤡','👻','👽','🤖','🙈','🙉','🙊','👍','👎','👏','🙌','🤝','🙏','👋','✌️','🤞','💪','❤️','🧡','💛','💚','💙','💜','🖤','💔','💕','💯','🔥','⭐','✨','🎉','🎊','🎁','🎂','🏆','👑','💎','🚀','💡','✅','❌','⚡','🌟','🌈','🌸','🌺','🍀','🐶','🐱','🐻','🦁','🐼','🐨','🦊','🐸','🦋','🐝'];
+
 function toggleEmojiPicker() {
   const ep = document.getElementById('emoji-picker');
   if (!ep) return;
-  const vis = ep.style.display === 'flex';
-  ep.style.display = vis ? 'none' : 'flex';
-  if (!vis) {
-    // Clica fora para fechar
-    setTimeout(() => document.addEventListener('click', function h(e) {
-      if (!ep.contains(e.target) && e.target.getAttribute('title') !== 'Emoji') {
-        ep.style.display='none'; document.removeEventListener('click',h);
-      }
-    }), 50);
-    // Cada emoji clicável
-    ep.onclick = (e) => {
-      const ch = e.target.textContent?.trim();
-      if (ch && [...ch].length <= 2) {
-        const inp = document.getElementById('chat-input');
-        if (inp) { const pos = inp.selectionStart; inp.value = inp.value.slice(0,pos)+ch+inp.value.slice(pos); inp.selectionStart=inp.selectionEnd=pos+ch.length; inp.focus(); }
-        ep.style.display='none';
-      }
-    };
+  const isOpen = ep.style.display === 'flex';
+  if (isOpen) { ep.style.display = 'none'; return; }
+
+  // Monta os spans se ainda não foi feito
+  if (!ep.children.length) {
+    ep.style.cssText += ';display:flex;flex-wrap:wrap;gap:2px';
+    ep.innerHTML = EMOJIS.map(e =>
+      `<span style="cursor:pointer;font-size:1.3rem;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:background .15s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''" onclick="insertEmoji('${e}')">${e}</span>`
+    ).join('');
   }
+  ep.style.display = 'flex';
+
+  // Fecha ao clicar fora
+  setTimeout(() => {
+    document.addEventListener('click', function h(ev) {
+      if (!ep.contains(ev.target) && ev.target.getAttribute('title') !== 'Emoji') {
+        ep.style.display = 'none';
+        document.removeEventListener('click', h);
+      }
+    });
+  }, 50);
+}
+
+function insertEmoji(emoji) {
+  const inp = document.getElementById('chat-input');
+  if (!inp) return;
+  const pos = inp.selectionStart || 0;
+  inp.value = inp.value.slice(0, pos) + emoji + inp.value.slice(pos);
+  inp.selectionStart = inp.selectionEnd = pos + emoji.length;
+  inp.focus();
+  inp.dispatchEvent(new Event('input')); // ajusta altura
+  document.getElementById('emoji-picker').style.display = 'none';
 }
 
 /* ── Envio de mídia (arquivo) ── */
@@ -1914,36 +1927,55 @@ async function takeover() {
   if (!currentChat) return;
   if (!confirm(`Assumir atendimento de ${currentChat.name}?\nO bot Maya vai parar de responder.`)) return;
   try {
-    // Envia #humano via Evolution API (webhook do n8n detecta fromMe=true)
-    await evo.call(`/message/sendText/${evo.inst()}`, {
-      method:'POST',
-      body: JSON.stringify({ number: currentChat.phone, text: '#humano' })
-    });
-    // Atualiza estado local
-    const conv = allConvs.find(c=>(c.id||c.remoteJid||'').includes(currentChat.phone));
+    await setBotMode(currentChat.phone, false);
+    const conv = allConvs.find(c=>(c.remoteJid||c.id||'').includes(currentChat.phone));
     if (conv) conv._humanMode = true;
     updateTakeoverButtons(true);
     checkBotStatus(currentChat.phone);
     renderConvList(allConvs);
     toast(`✓ Atendimento assumido — ${currentChat.name}`,'ok');
-  } catch(e) { toast(`Erro: ${e.message}`,'er'); }
+  } catch(e) { toast(`Erro ao assumir: ${e.message}`,'er'); }
 }
 
 async function returnBot() {
   if (!currentChat) return;
   if (!confirm(`Devolver ${currentChat.name} ao bot Maya?`)) return;
   try {
-    await evo.call(`/message/sendText/${evo.inst()}`, {
-      method:'POST',
-      body: JSON.stringify({ number: currentChat.phone, text: '#bot' })
-    });
-    const conv = allConvs.find(c=>(c.id||c.remoteJid||'').includes(currentChat.phone));
+    await setBotMode(currentChat.phone, true);
+    const conv = allConvs.find(c=>(c.remoteJid||c.id||'').includes(currentChat.phone));
     if (conv) conv._humanMode = false;
     updateTakeoverButtons(false);
     checkBotStatus(currentChat.phone);
     renderConvList(allConvs);
     toast(`✓ Bot Maya reativado — ${currentChat.name}`,'ok');
-  } catch(e) { toast(`Erro: ${e.message}`,'er'); }
+  } catch(e) { toast(`Erro ao devolver: ${e.message}`,'er'); }
+}
+
+// Ativa/desativa bot para um contato.
+// Tenta webhook n8n dedicado; fallback: envia #humano/#bot para o próprio número de Angela
+// (fromMe=true, dispara o n8n sem aparecer para o cliente).
+async function setBotMode(phone, botActive) {
+  const cmd = botActive ? '#bot' : '#humano';
+  const n8nUrl = ls.g('n8n_url') || '';
+
+  // Opção 1: webhook dedicado no n8n (mais limpo, sem mensagem visível)
+  if (n8nUrl) {
+    try {
+      const r = await fetch(`${n8nUrl}/webhook/bot-control`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, botActive, cmd })
+      });
+      if (r.ok) return; // sucesso
+    } catch { /* fallback abaixo */ }
+  }
+
+  // Opção 2: envia para o próprio número de Angela (fromMe=true no webhook do n8n)
+  // O n8n detecta fromMe=true + texto #humano/#bot e atualiza o estado
+  await evo.call(`/message/sendText/${evo.inst()}`, {
+    method: 'POST',
+    body: JSON.stringify({ number: phone, text: cmd })
+  });
 }
 
 /* ══════════════════════════════════════
