@@ -731,8 +731,10 @@
         <div class="sidebar-section" id="contact-notes-panel" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
             <h4 style="margin-bottom:0">📝 Anotações</h4>
-            <span class="note-save-badge" id="note-saved-badge">✓ salvo</span>
+            <span class="note-save-badge" id="note-saved-badge" style="opacity:0">✓ salvo</span>
           </div>
+          <div class="note-label">👤 Nome do contato</div>
+          <input class="note-input" id="note-nome-contato" placeholder="Nome do cliente..." oninput="autoSaveNote()" style="font-weight:600" />
           <div class="note-label">🏢 Empresa</div>
           <input class="note-input" id="note-empresa" placeholder="Nome da empresa..." oninput="autoSaveNote()" />
           <div class="note-label">✉️ E-mail</div>
@@ -747,6 +749,9 @@
           <input class="note-input" id="note-whatsapp2" placeholder="+55 (00) 0 0000-0000" oninput="autoSaveNote()" />
           <div class="note-label">📌 Observações</div>
           <textarea class="note-input note-textarea" id="note-obs" placeholder="Informações adicionais, status do lead, contexto..." oninput="autoSaveNote()"></textarea>
+          <button class="btn btn-teal" onclick="saveContactNotes()" style="width:100%;margin-top:10px;justify-content:center;font-size:.78rem">
+            💾 Salvar anotações
+          </button>
         </div>
         <!-- Status do bot -->
         <div class="sidebar-section">
@@ -1462,7 +1467,13 @@ async function loadConversations() {
       return;
     }
 
-    allConvs = convs;
+    // Deduplica por remoteJid (Evolution às vezes retorna duplicatas)
+    const seen = new Set();
+    allConvs = convs.filter(c => {
+      const key = c.remoteJid || c.id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key); return true;
+    });
     allConvs.sort((a,b)=> (b.updatedAt||b.lastMsgTimestamp||0) - (a.updatedAt||a.lastMsgTimestamp||0));
     renderConvList(allConvs);
     const upd = document.getElementById('maya-last-update');
@@ -1549,13 +1560,14 @@ function renderConvList(convs) {
     return;
   }
   list.innerHTML = filtered.map(c=>{
-    const name    = c.name || c.pushName || formatPhone(c.id?.split('@')[0]||c.remoteJid?.split('@')[0]||'?');
-    const phone   = c.id?.split('@')[0] || c.remoteJid?.split('@')[0] || '';
-    const preview = c.lastMessage?.conversation || c.lastMessage?.extendedTextMessage?.text || c.preview || '...';
+    const phone   = c.remoteJid?.split('@')[0] || c.id?.split('@')[0] || '';
+    // Prioridade: nome salvo nas notas > pushName da Evolution > número formatado
+    const savedName = (() => { try { return JSON.parse(ls.g(`cnotes_${phone}`)||'{}').nomeContato || ''; } catch { return ''; } })();
+    const name    = savedName || c.pushName || c.name || (phone ? formatPhone(phone) : '?');
+    const preview = c.lastMessage?.conversation || c.lastMessage?.extendedTextMessage?.text || c.preview || '';
     const time    = c.updatedAt||c.lastMsgTimestamp ? fmtTime(c.updatedAt||c.lastMsgTimestamp*1000) : '';
     const initials= name.slice(0,2).toUpperCase();
     const isHuman = c._humanMode;
-    // remoteJid é o JID do WhatsApp (5511...@s.whatsapp.net) — usado para buscar mensagens
     const convId  = c.remoteJid || (phone ? phone+'@s.whatsapp.net' : c.id);
     return `<div class="conv-item" id="conv-${phone}" onclick="openChat('${convId}','${name.replace(/'/g,"\\'")}','${phone}')">
       <div class="conv-avatar" style="${avatarStyle(phone||name)}">${initials}</div>
@@ -1796,13 +1808,14 @@ async function loadContactNotes(phone) {
     if (raw) notes = JSON.parse(raw);
   }
 
-  document.getElementById('note-empresa').value    = notes.empresa    || '';
-  document.getElementById('note-email').value      = notes.email      || '';
-  document.getElementById('note-website').value    = notes.website    || '';
-  document.getElementById('note-instagram').value  = notes.instagram  || '';
-  document.getElementById('note-linkedin').value   = notes.linkedin   || '';
-  document.getElementById('note-whatsapp2').value  = notes.whatsapp2  || '';
-  document.getElementById('note-obs').value        = notes.obs        || '';
+  document.getElementById('note-nome-contato').value = notes.nomeContato || '';
+  document.getElementById('note-empresa').value      = notes.empresa    || '';
+  document.getElementById('note-email').value        = notes.email      || '';
+  document.getElementById('note-website').value      = notes.website    || '';
+  document.getElementById('note-instagram').value    = notes.instagram  || '';
+  document.getElementById('note-linkedin').value     = notes.linkedin   || '';
+  document.getElementById('note-whatsapp2').value    = notes.whatsapp2  || '';
+  document.getElementById('note-obs').value          = notes.obs        || '';
 }
 
 function autoSaveNote() {
@@ -1817,14 +1830,22 @@ async function saveContactNotes() {
   if (!phone) return;
 
   const notes = {
-    empresa:   document.getElementById('note-empresa').value,
-    email:     document.getElementById('note-email').value,
-    website:   document.getElementById('note-website').value,
-    instagram: document.getElementById('note-instagram').value,
-    linkedin:  document.getElementById('note-linkedin').value,
-    whatsapp2: document.getElementById('note-whatsapp2').value,
-    obs:       document.getElementById('note-obs').value,
+    nomeContato: document.getElementById('note-nome-contato').value,
+    empresa:     document.getElementById('note-empresa').value,
+    email:       document.getElementById('note-email').value,
+    website:     document.getElementById('note-website').value,
+    instagram:   document.getElementById('note-instagram').value,
+    linkedin:    document.getElementById('note-linkedin').value,
+    whatsapp2:   document.getElementById('note-whatsapp2').value,
+    obs:         document.getElementById('note-obs').value,
   };
+  // Atualiza nome na lista de conversas imediatamente
+  if (notes.nomeContato) {
+    const convItem = document.getElementById(`conv-${phone}`);
+    if (convItem) { const el = convItem.querySelector('.conv-name'); if (el) el.textContent = notes.nomeContato; }
+    const chatName = document.getElementById('chat-name');
+    if (chatName && currentChat?.phone === phone) chatName.textContent = notes.nomeContato;
+  }
 
   // Sempre salva em localStorage (cache imediato)
   ls.s(`cnotes_${phone}`, JSON.stringify(notes));
