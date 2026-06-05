@@ -698,11 +698,18 @@
             </div>
           </div>
           <div class="chat-messages" id="chat-messages"></div>
-          <div class="chat-input-area">
+          <!-- Emoji picker popup -->
+          <div id="emoji-picker" style="display:none;position:absolute;bottom:70px;left:16px;z-index:200;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;box-shadow:var(--shadow);width:280px;max-height:200px;overflow-y:auto;line-height:1.8;font-size:1.3rem;flex-wrap:wrap;display:none">
+            😀😁😂🤣😃😄😅😆😉😊😋😎😍🥰😘😗😙😚🙂🤗🤩🤔🤨😐😑😶🙄😏😣😥😮🤐😯😪😫🥱😴😌😛😜😝🤤😒😓🤑🥳😤😠😡🤬😈👿💀🤯🤧🥴😷🤒🤕💩🤡👹👺👻👽👾🤖😺😸😹😻😼😽🙈🙉🙊👋🤚✋🖐👌✌🤞🤟🤘🤙👈👉👆🖕👇☝👍👎✊👊🤛🤜👏🙌🤲🤝🙏✍💅🤳💪🦾🦿🦵🦶👂🦻👃🫀🫁🧠👀❤🧡💛💚💙💜🖤🤍🤎💔❣💕💞💓💗💖💘💝💟☮✝☯✡🔯🕎☸☦🛐⛎♈♉♊♋♌♍♎♏♐♑♒♓🆔⚜🔰♻✅❎🚫
+          </div>
+          <div class="chat-input-area" style="position:relative">
+            <input type="file" id="media-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" style="display:none" onchange="sendMediaFile(this)" />
+            <button class="btn btn-ghost" title="Enviar arquivo" onclick="document.getElementById('media-file-input').click()" style="padding:8px 10px;font-size:1.1rem;flex-shrink:0">📎</button>
+            <button class="btn btn-ghost" title="Emoji" onclick="toggleEmojiPicker()" style="padding:8px 10px;font-size:1.1rem;flex-shrink:0">😊</button>
             <textarea class="chat-input" id="chat-input" rows="1" placeholder="Digite uma mensagem..."
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
               oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-            <button class="btn btn-teal" onclick="sendMessage()" style="padding:10px 14px">➤</button>
+            <button class="btn btn-teal" onclick="sendMessage()" style="padding:10px 14px;flex-shrink:0">➤</button>
           </div>
         </div>
       </div>
@@ -1656,13 +1663,7 @@ async function loadChatMessages(chat) {
       return;
     }
 
-    msgs.innerHTML = list.map(m=>{
-      const fromMe = m.key?.fromMe || m.fromMe;
-      const text   = m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || '[mídia]';
-      const time   = m.messageTimestamp ? new Date(m.messageTimestamp*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
-      const cls    = fromMe ? 'sent' : 'recv';
-      return `<div class="msg-bubble ${cls}">${text}<div class="msg-time">${time}</div></div>`;
-    }).join('');
+    msgs.innerHTML = list.map(m => renderMsgBubble(m)).join('');
     msgs.scrollTop = msgs.scrollHeight;
   } catch(e) {
     msgs.innerHTML=`<div style="padding:20px;color:var(--red);font-size:.78rem">❌ ${e.message}</div>`;
@@ -1686,6 +1687,172 @@ async function sendMessage() {
     msgs.innerHTML += `<div class="msg-bubble sent">${text}<div class="msg-time">${now}</div></div>`;
     msgs.scrollTop = msgs.scrollHeight;
   } catch(e) { toast(`Erro ao enviar: ${e.message}`,'er'); }
+}
+
+/* ══════════════════════════════════════
+   RENDERIZAÇÃO DE MENSAGENS + MÍDIA
+══════════════════════════════════════ */
+// Mapa global de chaves de mídia (evita problemas com JSON em onclick HTML)
+const _mediaKeys = {};
+
+function renderMsgBubble(m) {
+  const fromMe = m.key?.fromMe || m.fromMe;
+  const cls    = fromMe ? 'sent' : 'recv';
+  const ts     = m.messageTimestamp;
+  const time   = ts ? new Date(ts*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+  const msg    = m.message || {};
+
+  // Gera ID único para mídia baseado na chave da mensagem
+  const keyStr = m.key?.id || JSON.stringify(m.key||ts||Math.random());
+  const mid    = 'mid' + keyStr.replace(/[^a-z0-9]/gi,'').slice(-14);
+  _mediaKeys[mid] = m.key;
+
+  let content  = '';
+
+  if (msg.conversation || msg.extendedTextMessage) {
+    const text = msg.conversation || msg.extendedTextMessage?.text || '';
+    content = `<span style="white-space:pre-wrap">${escHtml(text)}</span>`;
+
+  } else if (msg.imageMessage) {
+    const caption = msg.imageMessage.caption ? `<div style="font-size:.75rem;margin-top:4px;opacity:.85">${escHtml(msg.imageMessage.caption)}</div>` : '';
+    content = `<div id="${mid}"><button class="btn btn-ghost" style="font-size:.72rem" onclick="loadMedia('${mid}','image')">🖼 Ver imagem</button></div>${caption}`;
+
+  } else if (msg.audioMessage || msg.pttMessage) {
+    content = `<div id="${mid}"><button class="btn btn-ghost" style="font-size:.72rem" onclick="loadMedia('${mid}','audio')">🎵 Ouvir áudio</button></div>`;
+
+  } else if (msg.videoMessage) {
+    content = `<div id="${mid}"><button class="btn btn-ghost" style="font-size:.72rem" onclick="loadMedia('${mid}','video')">🎬 Ver vídeo</button></div>`;
+
+  } else if (msg.documentMessage) {
+    const fname = escHtml(msg.documentMessage.fileName || 'documento');
+    content = `<div id="${mid}"><button class="btn btn-ghost" style="font-size:.72rem" onclick="loadMedia('${mid}','document','${fname}')">📄 ${fname}</button></div>`;
+
+  } else if (msg.stickerMessage) {
+    content = `<div id="${mid}"><button class="btn btn-ghost" style="font-size:.72rem" onclick="loadMedia('${mid}','sticker')">😄 Ver sticker</button></div>`;
+
+  } else if (msg.reactionMessage) {
+    content = `<span style="font-size:1.4rem">${escHtml(msg.reactionMessage.text||'👍')}</span>`;
+
+  } else if (msg.locationMessage) {
+    const { degreesLatitude:lat, degreesLongitude:lng, name:lname } = msg.locationMessage;
+    content = `<a href="https://maps.google.com/?q=${lat},${lng}" target="_blank" style="color:var(--teal)">📍 ${escHtml(lname||`${lat?.toFixed(4)},${lng?.toFixed(4)}`)}</a>`;
+
+  } else {
+    content = `<span style="opacity:.5;font-style:italic;font-size:.75rem">[${Object.keys(msg)[0]||'mensagem'}]</span>`;
+  }
+
+  return `<div class="msg-bubble ${cls}">${content}<div class="msg-time">${time}</div></div>`;
+}
+
+function escHtml(s) {
+  if (typeof s !== 'string') s = String(s||'');
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function loadMedia(mid, type, filename) {
+  const el = document.getElementById(mid);
+  if (!el) return;
+  el.innerHTML = `<div style="font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:6px"><div class="spin teal" style="width:14px;height:14px"></div> Carregando...</div>`;
+  try {
+    const key = _mediaKeys[mid];
+    if (!key) throw new Error('Chave não encontrada');
+    const r = await fetch(`${evo.base()}/chat/getBase64FromMediaMessage/${evo.inst()}`, {
+      method: 'POST',
+      headers: { 'apikey': evo.key(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: { key } })
+    });
+    const data = await r.json();
+    const b64  = data?.base64 || data?.data?.base64 || data?.mediaBase64;
+    const mime = data?.mimetype || data?.data?.mimetype || (type==='audio'?'audio/ogg':type==='image'?'image/jpeg':type==='video'?'video/mp4':'application/octet-stream');
+    if (!b64) throw new Error('Base64 não retornado');
+    const src = `data:${mime};base64,${b64}`;
+
+    if (type==='image' || type==='sticker') {
+      el.innerHTML = `<img src="${src}" style="max-width:220px;max-height:220px;border-radius:8px;cursor:pointer;display:block" onclick="window.open('${src}')" />`;
+    } else if (type==='audio') {
+      el.innerHTML = `<audio controls style="max-width:220px"><source src="${src}" type="${mime}" /></audio>`;
+    } else if (type==='video') {
+      el.innerHTML = `<video controls style="max-width:220px;max-height:180px;border-radius:8px"><source src="${src}" type="${mime}" /></video>`;
+    } else {
+      const a = document.createElement('a');
+      a.href = src; a.download = filename||'arquivo'; a.className = 'btn btn-ghost';
+      a.style.cssText = 'font-size:.72rem;display:inline-flex;gap:6px';
+      a.innerHTML = `📥 Baixar ${filename||'arquivo'}`;
+      el.innerHTML = ''; el.appendChild(a);
+    }
+  } catch(e) {
+    el.innerHTML = `<span style="font-size:.7rem;color:var(--red)">❌ Erro ao carregar: ${e.message}</span>`;
+  }
+}
+
+/* ── Emoji picker ── */
+function toggleEmojiPicker() {
+  const ep = document.getElementById('emoji-picker');
+  if (!ep) return;
+  const vis = ep.style.display === 'flex';
+  ep.style.display = vis ? 'none' : 'flex';
+  if (!vis) {
+    // Clica fora para fechar
+    setTimeout(() => document.addEventListener('click', function h(e) {
+      if (!ep.contains(e.target) && e.target.getAttribute('title') !== 'Emoji') {
+        ep.style.display='none'; document.removeEventListener('click',h);
+      }
+    }), 50);
+    // Cada emoji clicável
+    ep.onclick = (e) => {
+      const ch = e.target.textContent?.trim();
+      if (ch && [...ch].length <= 2) {
+        const inp = document.getElementById('chat-input');
+        if (inp) { const pos = inp.selectionStart; inp.value = inp.value.slice(0,pos)+ch+inp.value.slice(pos); inp.selectionStart=inp.selectionEnd=pos+ch.length; inp.focus(); }
+        ep.style.display='none';
+      }
+    };
+  }
+}
+
+/* ── Envio de mídia (arquivo) ── */
+async function sendMediaFile(input) {
+  if (!currentChat || !input.files?.length) return;
+  const file = input.files[0];
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const b64full = reader.result; // data:mime;base64,XXXXX
+    const [header, b64] = b64full.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+    const isAudio = mime.startsWith('audio/');
+    const isVideo = mime.startsWith('video/');
+    const isImage = mime.startsWith('image/');
+    const mediaType = isAudio ? 'audio' : isVideo ? 'video' : isImage ? 'image' : 'document';
+
+    // Adiciona preview imediato
+    const msgs = document.getElementById('chat-messages');
+    const now  = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const pid  = 'send-'+Date.now();
+    if (isImage) msgs.innerHTML += `<div class="msg-bubble sent" id="${pid}"><img src="${b64full}" style="max-width:200px;border-radius:8px" /><div class="msg-time">${now}</div></div>`;
+    else msgs.innerHTML += `<div class="msg-bubble sent" id="${pid}">📤 Enviando ${file.name}...<div class="msg-time">${now}</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+
+    try {
+      await evo.call(`/message/sendMedia/${evo.inst()}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          number: currentChat.phone,
+          mediatype: mediaType,
+          media: b64full,
+          fileName: file.name,
+          caption: ''
+        })
+      });
+      const pel = document.getElementById(pid);
+      if (pel && !isImage) pel.innerHTML = `📎 ${file.name} enviado ✓<div class="msg-time">${now}</div>`;
+    } catch(e) {
+      const pel = document.getElementById(pid);
+      if (pel) pel.innerHTML = `❌ Erro ao enviar ${file.name}<div class="msg-time">${now}</div>`;
+      toast(`Erro ao enviar arquivo: ${e.message}`, 'er');
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 /* ══════════════════════════════════════
