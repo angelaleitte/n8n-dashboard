@@ -659,6 +659,7 @@
         <div class="conv-list-head">
           <h3>💬 Conversas</h3>
           <button class="btn btn-teal" style="font-size:.7rem;padding:5px 10px" onclick="loadConversations()">↻</button>
+          <span id="maya-last-update" style="font-size:.65rem;color:var(--muted);margin-left:4px"></span>
         </div>
         <div style="padding:10px 12px;border-bottom:1px solid var(--border2)">
           <input class="conv-search" id="conv-search" placeholder="🔍 Buscar conversa..." oninput="filterConvs()" />
@@ -1309,7 +1310,8 @@ function switchTab(tab) {
   document.querySelectorAll('.dash-tab').forEach(b=>b.classList.remove('active'));
   document.getElementById(`tab-${tab}`).classList.add('active');
   document.getElementById(`tab-btn-${tab}`).classList.add('active');
-  if (tab==='maya') { loadConversations(); populateAgentSelect(); }
+  if (tab==='maya') { loadConversations(); populateAgentSelect(); startMayaAutoRefresh(); }
+  else { stopMayaAutoRefresh(); }
 }
 
 /* ══════════════════════════════════════
@@ -1333,6 +1335,78 @@ const evo = {
    CONVERSATIONS
 ══════════════════════════════════════ */
 let allConvs = [], currentChat = null, convFilter = 'all';
+let _mayaConvTimer = null, _mayaMsgTimer = null;
+
+function startMayaAutoRefresh() {
+  stopMayaAutoRefresh();
+  // Atualiza lista a cada 30s
+  _mayaConvTimer = setInterval(() => {
+    if (document.getElementById('tab-maya')?.classList.contains('active')) {
+      loadConversationsSilent();
+    }
+  }, 30000);
+}
+function stopMayaAutoRefresh() {
+  if (_mayaConvTimer) { clearInterval(_mayaConvTimer); _mayaConvTimer = null; }
+  stopChatAutoRefresh();
+}
+function startChatAutoRefresh() {
+  stopChatAutoRefresh();
+  // Atualiza mensagens do chat aberto a cada 15s
+  _mayaMsgTimer = setInterval(() => {
+    if (currentChat && document.getElementById('tab-maya')?.classList.contains('active')) {
+      loadChatMessagesSilent(currentChat);
+    }
+  }, 15000);
+}
+function stopChatAutoRefresh() {
+  if (_mayaMsgTimer) { clearInterval(_mayaMsgTimer); _mayaMsgTimer = null; }
+}
+
+// Carrega lista sem mostrar spinner (refresh silencioso)
+async function loadConversationsSilent() {
+  try {
+    const data = await evo.call(`/chat/findChats/${evo.inst()}`, { method:'POST', body: JSON.stringify({}) });
+    const fresh = Array.isArray(data) ? data : (data?.chats || data?.data || []);
+    fresh.sort((a,b)=> (b.updatedAt||b.lastMsgTimestamp||0) - (a.updatedAt||a.lastMsgTimestamp||0));
+    // Só re-renderiza se houver mudança
+    const oldIds = allConvs.map(c=>c.id||c.remoteJid).join(',');
+    const newIds = fresh.map(c=>c.id||c.remoteJid).join(',');
+    const oldTimes = allConvs.map(c=>c.updatedAt||c.lastMsgTimestamp||0).join(',');
+    const newTimes = fresh.map(c=>c.updatedAt||c.lastMsgTimestamp||0).join(',');
+    if (oldIds !== newIds || oldTimes !== newTimes) {
+      allConvs = fresh;
+      renderConvList(allConvs);
+      // Mantém conversa ativa selecionada
+      if (currentChat) document.getElementById(`conv-${currentChat.phone}`)?.classList.add('active');
+    }
+    // Atualiza indicador de tempo
+    document.getElementById('maya-last-update') && (document.getElementById('maya-last-update').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+  } catch(e) { /* falha silenciosa */ }
+}
+
+// Carrega mensagens sem spinner
+async function loadChatMessagesSilent(chat) {
+  if (!chat) return;
+  try {
+    const data = await evo.call(`/chat/findMessages/${evo.inst()}`, {
+      method:'POST',
+      body: JSON.stringify({ where:{ key:{ remoteJid: chat.id } }, limit:50, orderBy:[{column:'messageTimestamp',dir:'asc'}] })
+    });
+    const list = (data.messages?.records || data.records || data || []).filter(m=>m.message);
+    if (!list.length) return;
+    const msgs = document.getElementById('chat-messages');
+    if (!msgs) return;
+    const wasAtBottom = msgs.scrollTop + msgs.clientHeight >= msgs.scrollHeight - 40;
+    msgs.innerHTML = list.map(m=>{
+      const fromMe = m.key?.fromMe || m.fromMe;
+      const text   = m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || '[mídia]';
+      const time   = m.messageTimestamp ? new Date(m.messageTimestamp*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="msg-bubble ${fromMe?'sent':'recv'}">${text}<div class="msg-time">${time}</div></div>`;
+    }).join('');
+    if (wasAtBottom) msgs.scrollTop = msgs.scrollHeight;
+  } catch(e) { /* falha silenciosa */ }
+}
 
 async function loadConversations() {
   const list = document.getElementById('conv-list');
@@ -1346,6 +1420,8 @@ async function loadConversations() {
     allConvs = Array.isArray(data) ? data : (data?.chats || data?.data || []);
     allConvs.sort((a,b)=> (b.updatedAt||b.lastMsgTimestamp||0) - (a.updatedAt||a.lastMsgTimestamp||0));
     renderConvList(allConvs);
+    const upd = document.getElementById('maya-last-update');
+    if (upd) upd.textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   } catch(e) {
     list.innerHTML=`<div style="padding:20px;color:var(--red);font-size:.78rem">Erro: ${e.message}<br><small>Verifique URL e API Key da Evolution nas configurações</small></div>`;
   }
@@ -1474,6 +1550,7 @@ async function openChat(convId, name, phone) {
   loadContactNotes(phone);
   checkBotStatus(phone);
   await loadChatMessages(currentChat);
+  startChatAutoRefresh();
 }
 
 async function loadChatMessages(chat) {
