@@ -1550,12 +1550,15 @@ function setupResize(handleId, targetId, prop, fromRight=false) {
 function renderConvList(convs) {
   const list = document.getElementById('conv-list');
   const agents = getAgents();
+  // JIDs ocultos pela usuária
+  const hidden = getHiddenConvs();
+
   // Filtra por status
-  let filtered = convFilter==='all' ? convs
-    : convs.filter(c => convFilter==='human' ? c._humanMode : !c._humanMode);
+  let filtered = convs.filter(c => !hidden.has(c.remoteJid || c.id));
+  if (convFilter !== 'all') filtered = filtered.filter(c => convFilter==='human' ? c._humanMode : !c._humanMode);
   // Filtra por busca
   const q = document.getElementById('conv-search')?.value.toLowerCase()||'';
-  if (q) filtered = filtered.filter(c=>(c.name||c.id||'').toLowerCase().includes(q));
+  if (q) filtered = filtered.filter(c=>(c.pushName||c.name||c.remoteJid||c.id||'').toLowerCase().includes(q));
 
   if (!filtered.length) {
     list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:.78rem">Nenhuma conversa encontrada</div>`;
@@ -1563,6 +1566,7 @@ function renderConvList(convs) {
   }
   list.innerHTML = filtered.map(c=>{
     const phone   = c.remoteJid?.split('@')[0] || c.id?.split('@')[0] || '';
+    const convId  = c.remoteJid || (phone ? phone+'@s.whatsapp.net' : c.id);
     // Prioridade: nome salvo nas notas > pushName da Evolution > número formatado
     const savedName = (() => { try { return JSON.parse(ls.g(`cnotes_${phone}`)||'{}').nomeContato || ''; } catch { return ''; } })();
     const name    = savedName || c.pushName || c.name || (phone ? formatPhone(phone) : '?');
@@ -1570,8 +1574,9 @@ function renderConvList(convs) {
     const time    = c.updatedAt||c.lastMsgTimestamp ? fmtTime(c.updatedAt||c.lastMsgTimestamp*1000) : '';
     const initials= name.slice(0,2).toUpperCase();
     const isHuman = c._humanMode;
-    const convId  = c.remoteJid || (phone ? phone+'@s.whatsapp.net' : c.id);
-    return `<div class="conv-item" id="conv-${phone}" onclick="openChat('${convId}','${name.replace(/'/g,"\\'")}','${phone}')">
+    return `<div class="conv-item" id="conv-${phone}"
+        onclick="openChat('${convId}','${name.replace(/'/g,"\\'")}','${phone}')"
+        oncontextmenu="showConvMenu(event,'${convId}','${name.replace(/'/g,"\\'")}');return false">
       <div class="conv-avatar" style="${avatarStyle(phone||name)}">${initials}</div>
       <div class="conv-info">
         <div class="conv-name">${name}</div>
@@ -1583,6 +1588,41 @@ function renderConvList(convs) {
       </div>
     </div>`;
   }).join('');
+}
+
+/* ── Hidden conversations (localStorage) ── */
+function getHiddenConvs() {
+  try { return new Set(JSON.parse(ls.g('hidden_convs')||'[]')); } catch { return new Set(); }
+}
+function hideConv(convId) {
+  const s = getHiddenConvs(); s.add(convId);
+  ls.s('hidden_convs', JSON.stringify([...s]));
+  renderConvList(allConvs);
+  document.getElementById('conv-ctx-menu')?.remove();
+  toast('Conversa ocultada. Clique em ↻ para reexibir ocultas.','ok');
+}
+function showAllHidden() {
+  ls.s('hidden_convs','[]');
+  renderConvList(allConvs);
+  toast('Conversas ocultas reexibidas.','ok');
+}
+
+/* ── Context menu na conversa ── */
+function showConvMenu(e, convId, name) {
+  document.getElementById('conv-ctx-menu')?.remove();
+  const m = document.createElement('div');
+  m.id = 'conv-ctx-menu';
+  m.style.cssText = `position:fixed;left:${Math.min(e.clientX,window.innerWidth-180)}px;top:${e.clientY}px;z-index:9999;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);box-shadow:var(--shadow);min-width:170px;padding:4px 0;font-size:.8rem`;
+  m.innerHTML = `
+    <div style="padding:8px 14px;color:var(--muted);font-size:.72rem;border-bottom:1px solid var(--border2)">${name}</div>
+    <div onclick="hideConv('${convId}')" style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--yellow)" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+      🙈 Ocultar conversa
+    </div>
+    <div onclick="showAllHidden();document.getElementById('conv-ctx-menu')?.remove()" style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+      👁 Mostrar todas ocultas
+    </div>`;
+  document.body.appendChild(m);
+  setTimeout(() => document.addEventListener('click', function h() { m.remove(); document.removeEventListener('click',h); }, { once:true }), 10);
 }
 
 function filterConvs() { renderConvList(allConvs); }
