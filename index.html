@@ -1410,12 +1410,7 @@ async function loadChatMessagesSilent(chat) {
     const msgs = document.getElementById('chat-messages');
     if (!msgs) return;
     const wasAtBottom = msgs.scrollTop + msgs.clientHeight >= msgs.scrollHeight - 40;
-    msgs.innerHTML = list.map(m=>{
-      const fromMe = m.key?.fromMe || m.fromMe;
-      const text   = m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || '[mídia]';
-      const time   = m.messageTimestamp ? new Date(m.messageTimestamp*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div class="msg-bubble ${fromMe?'sent':'recv'}">${text}<div class="msg-time">${time}</div></div>`;
-    }).join('');
+    msgs.innerHTML = list.map(m => renderMsgBubble(m)).join('');
     if (wasAtBottom) msgs.scrollTop = msgs.scrollHeight;
   } catch(e) { /* falha silenciosa */ }
 }
@@ -2110,7 +2105,22 @@ function assignAgent() {
 }
 
 /* ── Helpers ── */
-function formatPhone(p) { return p.replace(/(\d{2})(\d{2})(\d{5})(\d{4})/,'($1) $2 $3-$4'); }
+function formatPhone(p) {
+  if (!p) return '?';
+  // Remove qualquer prefixo 55 do Brasil para formatar como (DDD) número
+  const n = p.replace(/\D/g,'');
+  // Com DDI 55: 5511999991111 → (11) 99999-1111
+  if (n.startsWith('55') && n.length >= 12) {
+    const local = n.slice(2);
+    if (local.length === 11) return `(${local.slice(0,2)}) ${local.slice(2,7)}-${local.slice(7)}`;
+    if (local.length === 10) return `(${local.slice(0,2)}) ${local.slice(2,6)}-${local.slice(6)}`;
+  }
+  // Sem DDI, 11 dígitos: 11999991111
+  if (n.length === 11) return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;
+  if (n.length === 10) return `(${n.slice(0,2)}) ${n.slice(2,6)}-${n.slice(6)}`;
+  // Fallback genérico
+  return n.replace(/(\d{2})(\d{2})(\d{4,5})(\d{4})/,'($1) $2 $3-$4') || p;
+}
 function fmtTime(ts) {
   const d = new Date(ts), now = new Date();
   if (d.toDateString()===now.toDateString()) return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
