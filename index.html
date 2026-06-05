@@ -1555,7 +1555,8 @@ function renderConvList(convs) {
     const time    = c.updatedAt||c.lastMsgTimestamp ? fmtTime(c.updatedAt||c.lastMsgTimestamp*1000) : '';
     const initials= name.slice(0,2).toUpperCase();
     const isHuman = c._humanMode;
-    const convId  = c.id || c.remoteJid || phone+'@s.whatsapp.net';
+    // remoteJid é o JID do WhatsApp (5511...@s.whatsapp.net) — usado para buscar mensagens
+    const convId  = c.remoteJid || (phone ? phone+'@s.whatsapp.net' : c.id);
     return `<div class="conv-item" id="conv-${phone}" onclick="openChat('${convId}','${name.replace(/'/g,"\\'")}','${phone}')">
       <div class="conv-avatar" style="${avatarStyle(phone||name)}">${initials}</div>
       <div class="conv-info">
@@ -1607,25 +1608,52 @@ async function loadChatMessages(chat) {
   const msgs = document.getElementById('chat-messages');
   msgs.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px"><div class="spin teal"></div></div>`;
   try {
-    const data = await evo.call(`/chat/findMessages/${evo.inst()}`, {
+    const endpoint = `/chat/findMessages/${evo.inst()}`;
+    const body = { where:{ key:{ remoteJid: chat.id } }, limit:50, orderBy:[{column:'messageTimestamp',dir:'asc'}] };
+    const r = await fetch(`${evo.base()}${endpoint}`, {
       method:'POST',
-      body: JSON.stringify({ where:{ key:{ remoteJid: chat.id } }, limit:50, orderBy:[{column:'messageTimestamp',dir:'asc'}] })
+      headers:{ 'apikey': evo.key(), 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
     });
-    const list = (data.messages?.records || data.records || data || []).filter(m=>m.message);
-    if (!list.length) { msgs.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted)">Nenhuma mensagem</div>`; return; }
+    const rawText = await r.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch { data = rawText; }
+
+    if (!r.ok) {
+      msgs.innerHTML=`<div style="padding:20px;color:var(--red);font-size:.78rem">
+        ❌ HTTP ${r.status}<br>
+        <small>remoteJid: <code>${chat.id}</code></small><br>
+        <pre style="font-size:.65rem;margin-top:6px;white-space:pre-wrap;word-break:break-all;background:var(--bg2);padding:8px;border-radius:6px;max-height:150px;overflow:auto">${String(rawText).slice(0,400)}</pre>
+      </div>`;
+      return;
+    }
+
+    // Extrai lista de mensagens de múltiplos formatos possíveis
+    let list = [];
+    if (Array.isArray(data))                    list = data;
+    else if (Array.isArray(data?.messages?.records)) list = data.messages.records;
+    else if (Array.isArray(data?.records))       list = data.records;
+    else if (Array.isArray(data?.messages))      list = data.messages;
+    list = list.filter(m=>m.message);
+
+    if (!list.length) {
+      msgs.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:.78rem">
+        Nenhuma mensagem encontrada<br>
+        <small style="opacity:.6">remoteJid: <code>${chat.id}</code></small>
+      </div>`;
+      return;
+    }
+
     msgs.innerHTML = list.map(m=>{
       const fromMe = m.key?.fromMe || m.fromMe;
       const text   = m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || '[mídia]';
       const time   = m.messageTimestamp ? new Date(m.messageTimestamp*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
       const cls    = fromMe ? 'sent' : 'recv';
-      return `<div class="msg-bubble ${cls}">
-        ${text}
-        <div class="msg-time">${time}</div>
-      </div>`;
+      return `<div class="msg-bubble ${cls}">${text}<div class="msg-time">${time}</div></div>`;
     }).join('');
     msgs.scrollTop = msgs.scrollHeight;
   } catch(e) {
-    msgs.innerHTML=`<div style="padding:20px;color:var(--red);font-size:.78rem">Erro: ${e.message}</div>`;
+    msgs.innerHTML=`<div style="padding:20px;color:var(--red);font-size:.78rem">❌ ${e.message}</div>`;
   }
 }
 
